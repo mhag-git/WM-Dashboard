@@ -1,74 +1,70 @@
-# WM 2026 Dashboard V3
+# WM 2026 Dashboard V4
 
 GitHub-Pages-fähige HTML-Version des WM-Dashboards mit:
 
-- **Flaggen** für Teams
-- **Auto-Refresh** im Browser
-- **schönerem K.o.-Bracket** mit Verbindungslinien
-- **Live-Daten-Versuch** über einen öffentlichen REST-Endpunkt
-- **Snapshot-Fallback**, falls der Live-Feed nicht erreichbar ist
-- eingebauter **Anleitung zum Anpassen von Teams und Spielen**
+- **Multi-API-Fallback**
+- **Health-Status** je Provider
+- **Flaggen**, **Auto-Refresh** und **K.o.-Bracket**
+- **Live-Overlay + Snapshot-Fallback**
+- eingebauter **Anleitung zum Anpassen von Teams, Spielen und Providern**
 
 ## Dateien
 
-- `wm2026-dashboard-v3.html` – vollständiges Dashboard als eine einzige HTML-Datei
-- `wm2026-snapshot-v3.json` – kleiner Snapshot-Hinweis / Fallback-Metadaten
-- `README-wm2026-dashboard-v3.md` – diese Anleitung
+- `wm2026-dashboard-v4.html` – vollständiges Dashboard als eine einzige HTML-Datei
+- `README-wm2026-dashboard-v4.md` – diese Anleitung
+- `wm2026-snapshot-v4.json` – Snapshot-Metadaten
 
 ## Deployment auf GitHub Pages
 
-1. Lade `wm2026-dashboard-v3.html` herunter.
+1. Lade `wm2026-dashboard-v4.html` herunter.
 2. Benenne die Datei in **`index.html`** um.
-3. Lege ein GitHub-Repository an oder verwende ein bestehendes.
-4. Lade `index.html` in das Root-Verzeichnis hoch.
-5. Optional kannst du `wm2026-snapshot-v3.json` ebenfalls mit hochladen.
-6. Öffne in GitHub **Settings → Pages**.
-7. Wähle bei **Build and deployment** die Branch `main` (oder `master`) und `/root`.
-8. Speichern – danach ist das Dashboard über GitHub Pages erreichbar.
+3. Lade `index.html` in das Root-Verzeichnis deines GitHub-Repositories.
+4. Optional kannst du `wm2026-snapshot-v4.json` zusätzlich ablegen.
+5. Aktiviere in GitHub unter **Settings → Pages** das Hosting der Haupt-Branch.
 
-## Live-Daten-Modus
+## Multi-API-Fallback in V4
 
-Die Datei versucht beim Laden diese öffentlichen Endpunkte abzurufen:
+V4 versucht Daten in dieser Reihenfolge zu laden:
 
-- `https://worldcup26.ir/get/games`
-- `https://worldcup26.ir/get/groups`
+1. `worldcup26.ir` → vollständiger Spiel-Feed ohne Key
+2. `KickoffAPI` → Live-Overlay über API-Key (`x-api-key`)
+3. `WorldCupAPI` → Live-Overlay über Query-Parameter-Key
+4. eingebetteter Snapshot
 
-Wenn der Feed nicht erreichbar ist oder CORS blockiert wird, läuft das Dashboard automatisch mit dem eingebetteten Snapshot weiter.
+Wenn nur ein Overlay-Feed erfolgreich ist, wird dein Snapshot als Basis verwendet und mit Live-Scores ergänzt.
 
-## Auto-Refresh
+## Health-Status
 
-Im Dashboard kannst du direkt einstellen:
+Im Reiter **„Live & Health“** siehst du pro Provider:
 
-- Auto-Refresh **an/aus**
-- Intervall **30 / 60 / 120 Sekunden**
-- manuelles **„Jetzt aktualisieren“**
+- Status (`bereit`, `optional`, `fehler`, `idle`)
+- letzte Latenz in ms
+- letzten Prüfzeitpunkt
+- verwendeten Endpoint
 
-## Teams und Spiele anpassen
+## API-Keys
 
-In V3 gibt es dafür **zwei Wege**:
+API-Keys werden **nicht fest in die HTML-Datei geschrieben**. Stattdessen speichert V4 sie nur lokal im Browser via `localStorage`.
 
-### A) Direkt im Dashboard
-Im Reiter **„Live & Anleitung“** ist eine aufklappbare Anleitung eingebaut.
+### Eingabefelder in V4
 
-### B) Direkt in der HTML-Datei
-Suche in der Datei nach diesen Blöcken:
+- **KickoffAPI Key**
+- **WorldCupAPI Key**
 
-- `const TEAM_FLAGS = { ... }` → Flaggen anpassen
-- `const RANKINGS = { ... }` → FIFA-Ranking / Teamstärke anpassen
-- `const GROUPS = { ... }` → Gruppenzuordnung anpassen
-- `SNAPSHOT.completedMatches` → gespielte Ergebnisse anpassen
-- `SNAPSHOT.upcomingMatches` → kommende Spiele anpassen
-- `SNAPSHOT.bracket` → K.o.-Bracket anpassen
+## Teams, Spiele und Bracket anpassen
+
+In der HTML-Datei kannst du folgende Blöcke bearbeiten:
+
+- `TEAM_FLAGS` → Flaggen
+- `RANKINGS` → Teamstärke / FIFA-Ranking
+- `GROUPS` → Gruppenverteilung
+- `SNAPSHOT.completedMatches` → Ergebnisse
+- `SNAPSHOT.upcomingMatches` → kommende Spiele
+- `SNAPSHOT.bracket` → K.o.-Baum
+- `PROVIDERS` → Provider-Reihenfolge / Endpunkte
 
 ## Hinweise
 
 - Die Sieg-Wahrscheinlichkeiten sind **heuristisch** und kein Wettmodell.
-- Für GitHub Pages ist **kein Build-Schritt** nötig.
-- Alle Änderungen können in einem normalen Texteditor gemacht werden.
-
-## Sinnvolle nächste Erweiterungen
-
-- Team-Logos statt Emoji-Flaggen
-- eigene Datenquelle / JSON-Datei im Repo
-- GitHub Action zum periodischen Aktualisieren des Snapshots
-- Detailansicht pro Team
+- Für GitHub Pages ist **kein Build-Prozess** nötig.
+- Änderungen können in einem normalen Texteditor gemacht werden.
