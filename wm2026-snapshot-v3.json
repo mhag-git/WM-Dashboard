@@ -1,0 +1,7 @@
+{
+  "note": "Snapshot metadata for WM 2026 Dashboard V3 fallback.",
+  "generatedAt": "2026-06-22T12:31:56+02:00",
+  "features": ["flags", "auto-refresh", "bracket-lines", "embedded-edit-guide"],
+  "completedMatchesCount": 40,
+  "upcomingMatchesCount": 32
+}
