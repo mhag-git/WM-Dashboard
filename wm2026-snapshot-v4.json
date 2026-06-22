@@ -1,0 +1,6 @@
+{
+  "note": "Snapshot metadata for WM 2026 Dashboard V4 fallback.",
+  "generatedAt": "2026-06-22T12:31:56+02:00",
+  "features": ["multi-api-fallback", "health-status", "flags", "auto-refresh", "embedded-guide"],
+  "fallbackOrder": ["worldcup26.ir", "kickoffapi", "worldcupapi", "snapshot"]
+}
