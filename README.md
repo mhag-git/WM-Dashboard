@@ -1,131 +1,74 @@
-# WM 2026 Dashboard (GitHub Pages)
+# WM 2026 Dashboard V3
 
-Interaktives HTML-Dashboard für die **FIFA World Cup 2026™** mit:
+GitHub-Pages-fähige HTML-Version des WM-Dashboards mit:
 
-- **Gruppenständen A–L**
-- **aktuellen Ergebnissen & kommenden Anstoßzeiten**
-- **lokalen Uhrzeiten im Browser**
-- **modernem, minimalistischem UI**
-- **Flaggen**
-- **offiziellem K.o.-Bracket (Round of 32 bis Finale)**
-- **heuristischen Sieg-/Titel-Wahrscheinlichkeiten** auf Basis von **FIFA-Ranking + Turnierform**
-- **GitHub-Pages-fähig** (kein Build-Schritt nötig)
-
----
+- **Flaggen** für Teams
+- **Auto-Refresh** im Browser
+- **schönerem K.o.-Bracket** mit Verbindungslinien
+- **Live-Daten-Versuch** über einen öffentlichen REST-Endpunkt
+- **Snapshot-Fallback**, falls der Live-Feed nicht erreichbar ist
+- eingebauter **Anleitung zum Anpassen von Teams und Spielen**
 
 ## Dateien
 
-- `index.html` – komplette App in einer Datei
-- `README.md` – diese Anleitung
-- `wm_dashboard_2026_bundle.zip` – direkt hochladbares Bundle
+- `wm2026-dashboard-v3.html` – vollständiges Dashboard als eine einzige HTML-Datei
+- `wm2026-snapshot-v3.json` – kleiner Snapshot-Hinweis / Fallback-Metadaten
+- `README-wm2026-dashboard-v3.md` – diese Anleitung
 
----
+## Deployment auf GitHub Pages
 
-## Schnellstart (GitHub Pages)
+1. Lade `wm2026-dashboard-v3.html` herunter.
+2. Benenne die Datei in **`index.html`** um.
+3. Lege ein GitHub-Repository an oder verwende ein bestehendes.
+4. Lade `index.html` in das Root-Verzeichnis hoch.
+5. Optional kannst du `wm2026-snapshot-v3.json` ebenfalls mit hochladen.
+6. Öffne in GitHub **Settings → Pages**.
+7. Wähle bei **Build and deployment** die Branch `main` (oder `master`) und `/root`.
+8. Speichern – danach ist das Dashboard über GitHub Pages erreichbar.
 
-1. Neues GitHub-Repository anlegen, z. B. `wm-dashboard-2026`.
-2. `index.html` und `README.md` ins Repo hochladen.
-3. In GitHub zu **Settings → Pages** gehen.
-4. Unter **Build and deployment** die Quelle **Deploy from a branch** wählen.
-5. Branch `main` und Ordner `/ (root)` auswählen.
-6. Speichern – GitHub veröffentlicht die Seite unter deiner Pages-URL.
+## Live-Daten-Modus
 
-> Kein Node, kein Build, kein Framework erforderlich.
+Die Datei versucht beim Laden diese öffentlichen Endpunkte abzurufen:
 
----
+- `https://worldcup26.ir/get/games`
+- `https://worldcup26.ir/get/groups`
 
-## Datenquellen / Architektur
+Wenn der Feed nicht erreichbar ist oder CORS blockiert wird, läuft das Dashboard automatisch mit dem eingebetteten Snapshot weiter.
 
-Die Seite versucht beim Laden zuerst **öffentliche JSON-Feeds** anzusprechen. Wenn das nicht klappt (z. B. CORS/Verfügbarkeit), fällt sie automatisch auf einen **eingebauten Snapshot** zurück.
+## Auto-Refresh
 
-### Primäre Live-/Public-Feeds im HTML
+Im Dashboard kannst du direkt einstellen:
 
-1. **GitHub Raw JSON (World Cup 2026 API Repo)**
-   - `https://raw.githubusercontent.com/rezarahiminia/worldcup2026/main/football.matches.json`
-   - `https://raw.githubusercontent.com/rezarahiminia/worldcup2026/main/football.matchtables.json`
-   - `https://raw.githubusercontent.com/rezarahiminia/worldcup2026/main/football.teams.json`
+- Auto-Refresh **an/aus**
+- Intervall **30 / 60 / 120 Sekunden**
+- manuelles **„Jetzt aktualisieren“**
 
-2. **Public JSON Schedule / Static API**
-   - `https://wheniskickoff.com/data/v1/matches.json`
-   - `https://wheniskickoff.com/data/v1/groups.json`
+## Teams und Spiele anpassen
 
-### Eingebauter Fallback-Snapshot
+In V3 gibt es dafür **zwei Wege**:
 
-Der Snapshot im HTML ist auf Basis öffentlich verfügbarer Turnierstände und Spielpläne vorbereitet und deckt die Gruppenphase sowie das offizielle K.o.-Gerüst ab.
+### A) Direkt im Dashboard
+Im Reiter **„Live & Anleitung“** ist eine aufklappbare Anleitung eingebaut.
 
----
+### B) Direkt in der HTML-Datei
+Suche in der Datei nach diesen Blöcken:
 
-## Transparenz zum Wahrscheinlichkeitsmodell
+- `const TEAM_FLAGS = { ... }` → Flaggen anpassen
+- `const RANKINGS = { ... }` → FIFA-Ranking / Teamstärke anpassen
+- `const GROUPS = { ... }` → Gruppenzuordnung anpassen
+- `SNAPSHOT.completedMatches` → gespielte Ergebnisse anpassen
+- `SNAPSHOT.upcomingMatches` → kommende Spiele anpassen
+- `SNAPSHOT.bracket` → K.o.-Bracket anpassen
 
-Die Anzeige **„Titelchancen / Sieg-Wahrscheinlichkeiten“** ist bewusst als **heuristische Orientierung** umgesetzt – nicht als Wettmodell.
+## Hinweise
 
-Verwendete Signale:
+- Die Sieg-Wahrscheinlichkeiten sind **heuristisch** und kein Wettmodell.
+- Für GitHub Pages ist **kein Build-Schritt** nötig.
+- Alle Änderungen können in einem normalen Texteditor gemacht werden.
 
-- **FIFA-Ranking / FIFA-Punkte** (als Grundstärke)
-- **Turnierform** aus bisheriger WM-Leistung
-  - Punkte pro Spiel
-  - Torverhältnis
-  - erzielte / kassierte Tore
-- **Fortschrittsbonus** für bereits sehr gut positionierte Teams
+## Sinnvolle nächste Erweiterungen
 
-Kurzlogik:
-
-- Aus Ranking + Form wird ein **Stärkewert** gebaut.
-- Für direkte Matchups wird daraus via logistischer Funktion eine **Sieg-/Remis-Wahrscheinlichkeit** berechnet.
-- Die **Titelchance** wird aus den relativen Team-Stärken normalisiert.
-
-> Damit bleibt das Modell nachvollziehbar und robust, ohne versteckte Annahmen oder externe Keys.
-
----
-
-## Design / Features
-
-- Glas-/Dark-UI mit minimalistischem Layout
-- Responsive Darstellung (Desktop / Laptop / Tablet / Smartphone)
-- Filter für:
-  - Gruppe / Phase
-  - Status (Live / Beendet / Kommend)
-  - Freitextsuche
-- Bracket-Darstellung mit offiziellen Slots
-- Browser-abhängige lokale Zeitformatierung (`Intl.DateTimeFormat`)
-- Keine externen Build-Tools
-
----
-
-## Bekannte Grenzen
-
-1. **Echte Live-Daten in GitHub Pages hängen von der Erreichbarkeit der öffentlichen JSON-Feeds ab.**
-   Deshalb gibt es den eingebauten Snapshot als Fallback.
-2. **Drittplatz-Zuordnungen im K.o.-Baum** bleiben bis zur finalen Bestätigung zum Teil Platzhalter – das ist im Dashboard transparent markiert.
-3. **Titelchancen sind heuristisch** und bewusst nicht als exakte Simulation der offiziellen FIFA-Annex-Kombinationen implementiert.
-
----
-
-## Öffentliche Quellen, die für den Snapshot / die Struktur genutzt wurden
-
-### Offizielle/nahezu offizielle Strukturquellen
-- [FIFA – Match schedule, fixtures, results & stadiums](https://www.fifa.com/tournaments/mens/worldcup/canadamexicousa2026/articles/match-schedule-fixtures-results-teams-stadiums)
-- [FIFA – Knockout stage match schedule bracket](https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/knockout-stage-match-schedule-bracket)
-- [FIFA – Qualified and eliminated teams](https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/qualified-eliminated-teams)
-- [FIFA Rankings overview](https://ipt.fifa.com/fifa-rankings)
-
-### Öffentliche Ergänzungen für Stände / Rankings
-- [NBC Sports – 2026 World Cup group stage table](https://www.nbcsports.com/soccer/news/2026-world-cup-group-stage-table-full-standings-for-all-12-groups)
-- [ESPN – FIFA Men’s Top 50 World Rankings: June 2026](https://www.espn.com/soccer/story/_/id/46664763/fifa-mens-top-50-world-rankings)
-- [When Is Kickoff – Public JSON API](https://wheniskickoff.com/data/)
-- [GitHub – rezarahiminia/worldcup2026](https://github.com/rezarahiminia/worldcup2026)
-
----
-
-## Anpassungen, die du leicht machen kannst
-
-- Standard-Teams im Predictor ändern (`GER` / `ESP` im JS)
-- Farben im `:root`-Block anpassen
-- Logo / Titel / Firmenbranding ergänzen
-- zusätzliche Tabs (z. B. Torschützen, Host Cities, TV-Infos)
-
----
-
-## Tipp
-
-Wenn du maximale Kontrolle willst, kannst du statt öffentlicher Feeds auch **eigene JSON-Dateien direkt ins Repo legen** und im `LIVE_ENDPOINTS`-Block auf relative Dateien umstellen – dann ist die Seite vollständig deterministisch.
+- Team-Logos statt Emoji-Flaggen
+- eigene Datenquelle / JSON-Datei im Repo
+- GitHub Action zum periodischen Aktualisieren des Snapshots
+- Detailansicht pro Team
