@@ -1,690 +1,1110 @@
-import React, { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, ScatterChart, Scatter, CartesianGrid, Cell } from "recharts";
-import { CalendarClock, Trophy, Shield, Search, RefreshCw, TrendingUp, Swords, Clock3 } from "lucide-react";
-
-const rankings = {
-  "Argentina": 1, "Spain": 2, "France": 3, "England": 4, "Portugal": 5, "Brazil": 6, "Morocco": 7, "Netherlands": 8,
-  "Belgium": 9, "Germany": 10, "Croatia": 11, "Colombia": 13, "Mexico": 14, "Senegal": 15, "Uruguay": 16, "USA": 17,
-  "Japan": 18, "Switzerland": 19, "Iran": 20, "Türkiye": 22, "Ecuador": 23, "Austria": 24, "Korea Republic": 25,
-  "Australia": 27, "Algeria": 28, "Egypt": 29, "Canada": 30, "Norway": 31, "Côte d'Ivoire": 33, "Panama": 34,
-  "Sweden": 38, "Czechia": 40, "Paraguay": 41, "Scotland": 42, "Tunisia": 45, "Congo DR": 46, "Uzbekistan": 50,
-  "Qatar": 56, "Iraq": 57, "South Africa": 60, "Saudi Arabia": 61, "Jordan": 63, "Bosnia and Herzegovina": 64,
-  "Cabo Verde": 67, "Ghana": 73, "Curaçao": 82, "Haiti": 83, "New Zealand": 85
-};
-
-const groups = {
-  A: ["Mexico", "South Africa", "Korea Republic", "Czechia"],
-  B: ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
-  C: ["Brazil", "Morocco", "Haiti", "Scotland"],
-  D: ["USA", "Paraguay", "Australia", "Türkiye"],
-  E: ["Germany", "Côte d'Ivoire", "Ecuador", "Curaçao"],
-  F: ["Netherlands", "Japan", "Sweden", "Tunisia"],
-  G: ["Belgium", "Egypt", "Iran", "New Zealand"],
-  H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
-  I: ["France", "Senegal", "Iraq", "Norway"],
-  J: ["Argentina", "Algeria", "Austria", "Jordan"],
-  K: ["Portugal", "Congo DR", "Uzbekistan", "Colombia"],
-  L: ["England", "Croatia", "Ghana", "Panama"]
-};
-
-const completedMatches = [
-  { id: 1, date: "2026-06-11T21:00:00+02:00", group: "A", home: "Mexico", away: "South Africa", hg: 2, ag: 0, venue: "Mexico City Stadium" },
-  { id: 2, date: "2026-06-12T03:00:00+02:00", group: "A", home: "Korea Republic", away: "Czechia", hg: 2, ag: 1, venue: "Guadalajara Stadium" },
-  { id: 3, date: "2026-06-12T21:00:00+02:00", group: "B", home: "Canada", away: "Bosnia and Herzegovina", hg: 1, ag: 1, venue: "Toronto Stadium" },
-  { id: 4, date: "2026-06-13T03:00:00+02:00", group: "D", home: "USA", away: "Paraguay", hg: 4, ag: 1, venue: "Los Angeles Stadium" },
-  { id: 5, date: "2026-06-14T00:00:00+02:00", group: "B", home: "Qatar", away: "Switzerland", hg: 1, ag: 1, venue: "San Francisco Bay Area Stadium" },
-  { id: 6, date: "2026-06-14T03:00:00+02:00", group: "C", home: "Brazil", away: "Morocco", hg: 1, ag: 1, venue: "New York New Jersey Stadium" },
-  { id: 7, date: "2026-06-14T06:00:00+02:00", group: "C", home: "Haiti", away: "Scotland", hg: 0, ag: 1, venue: "Boston Stadium" },
-  { id: 8, date: "2026-06-14T09:00:00+02:00", group: "D", home: "Australia", away: "Türkiye", hg: 2, ag: 0, venue: "BC Place Vancouver" },
-  { id: 9, date: "2026-06-14T18:00:00+02:00", group: "E", home: "Germany", away: "Curaçao", hg: 7, ag: 1, venue: "Houston Stadium" },
-  { id: 10, date: "2026-06-15T00:00:00+02:00", group: "F", home: "Netherlands", away: "Japan", hg: 2, ag: 2, venue: "Dallas Stadium" },
-  { id: 11, date: "2026-06-15T03:00:00+02:00", group: "E", home: "Côte d'Ivoire", away: "Ecuador", hg: 1, ag: 0, venue: "Philadelphia Stadium" },
-  { id: 12, date: "2026-06-15T09:00:00+02:00", group: "F", home: "Sweden", away: "Tunisia", hg: 5, ag: 1, venue: "Estadio Monterrey" },
-  { id: 13, date: "2026-06-15T18:00:00+02:00", group: "H", home: "Saudi Arabia", away: "Uruguay", hg: 1, ag: 1, venue: "Miami Stadium" },
-  { id: 14, date: "2026-06-15T21:00:00+02:00", group: "H", home: "Spain", away: "Cabo Verde", hg: 0, ag: 0, venue: "Atlanta Stadium" },
-  { id: 15, date: "2026-06-16T03:00:00+02:00", group: "G", home: "Iran", away: "New Zealand", hg: 2, ag: 2, venue: "Los Angeles Stadium" },
-  { id: 16, date: "2026-06-16T06:00:00+02:00", group: "G", home: "Belgium", away: "Egypt", hg: 1, ag: 1, venue: "Seattle Stadium" },
-  { id: 17, date: "2026-06-16T21:00:00+02:00", group: "I", home: "France", away: "Senegal", hg: 3, ag: 1, venue: "New York New Jersey Stadium" },
-  { id: 18, date: "2026-06-17T03:00:00+02:00", group: "I", home: "Iraq", away: "Norway", hg: 1, ag: 4, venue: "Boston Stadium" },
-  { id: 19, date: "2026-06-17T05:00:00+02:00", group: "J", home: "Argentina", away: "Algeria", hg: 3, ag: 0, venue: "Kansas City Stadium" },
-  { id: 20, date: "2026-06-17T08:00:00+02:00", group: "J", home: "Austria", away: "Jordan", hg: 3, ag: 1, venue: "San Francisco Bay Area Stadium" },
-  { id: 21, date: "2026-06-17T21:00:00+02:00", group: "L", home: "Ghana", away: "Panama", hg: 1, ag: 0, venue: "Toronto Stadium" },
-  { id: 22, date: "2026-06-18T03:00:00+02:00", group: "L", home: "England", away: "Croatia", hg: 4, ag: 2, venue: "Dallas Stadium" },
-  { id: 23, date: "2026-06-18T06:00:00+02:00", group: "K", home: "Portugal", away: "Congo DR", hg: 1, ag: 1, venue: "Houston Stadium" },
-  { id: 24, date: "2026-06-18T09:00:00+02:00", group: "K", home: "Uzbekistan", away: "Colombia", hg: 1, ag: 3, venue: "Mexico City Stadium" },
-  { id: 25, date: "2026-06-18T21:00:00+02:00", group: "A", home: "Czechia", away: "South Africa", hg: 1, ag: 1, venue: "Atlanta Stadium" },
-  { id: 26, date: "2026-06-19T03:00:00+02:00", group: "B", home: "Switzerland", away: "Bosnia and Herzegovina", hg: 4, ag: 1, venue: "Los Angeles Stadium" },
-  { id: 27, date: "2026-06-19T06:00:00+02:00", group: "B", home: "Canada", away: "Qatar", hg: 6, ag: 0, venue: "BC Place Vancouver" },
-  { id: 28, date: "2026-06-19T09:00:00+02:00", group: "A", home: "Mexico", away: "Korea Republic", hg: 1, ag: 0, venue: "Guadalajara Stadium" },
-  { id: 29, date: "2026-06-19T21:00:00+02:00", group: "C", home: "Brazil", away: "Haiti", hg: 3, ag: 0, venue: "Philadelphia Stadium" },
-  { id: 30, date: "2026-06-20T03:00:00+02:00", group: "C", home: "Scotland", away: "Morocco", hg: 0, ag: 1, venue: "Boston Stadium" },
-  { id: 31, date: "2026-06-20T06:00:00+02:00", group: "D", home: "Türkiye", away: "Paraguay", hg: 0, ag: 1, venue: "San Francisco Bay Area Stadium" },
-  { id: 32, date: "2026-06-20T09:00:00+02:00", group: "D", home: "USA", away: "Australia", hg: 2, ag: 0, venue: "Seattle Stadium" },
-  { id: 33, date: "2026-06-20T22:00:00+02:00", group: "E", home: "Germany", away: "Côte d'Ivoire", hg: 2, ag: 1, venue: "Toronto Stadium" },
-  { id: 34, date: "2026-06-21T04:00:00+02:00", group: "E", home: "Ecuador", away: "Curaçao", hg: 0, ag: 0, venue: "Kansas City Stadium" },
-  { id: 35, date: "2026-06-21T06:00:00+02:00", group: "F", home: "Netherlands", away: "Sweden", hg: 5, ag: 1, venue: "Houston Stadium" },
-  { id: 36, date: "2026-06-21T09:00:00+02:00", group: "F", home: "Tunisia", away: "Japan", hg: 0, ag: 4, venue: "Estadio Monterrey" },
-  { id: 37, date: "2026-06-21T22:00:00+02:00", group: "H", home: "Uruguay", away: "Cabo Verde", hg: 2, ag: 2, venue: "Miami Stadium" },
-  { id: 38, date: "2026-06-22T00:00:00+02:00", group: "H", home: "Spain", away: "Saudi Arabia", hg: 4, ag: 0, venue: "Atlanta Stadium" },
-  { id: 39, date: "2026-06-22T03:00:00+02:00", group: "G", home: "Belgium", away: "Iran", hg: 0, ag: 0, venue: "Los Angeles Stadium" },
-  { id: 40, date: "2026-06-22T06:00:00+02:00", group: "G", home: "New Zealand", away: "Egypt", hg: 1, ag: 3, venue: "BC Place Vancouver" }
-];
-
-const upcomingMatches = [
-  { id: 41, stage: "Gruppenphase", group: "J", home: "Argentina", away: "Austria", kickoff: "2026-06-22T19:00:00+02:00", venue: "AT&T Stadium, Dallas" },
-  { id: 42, stage: "Gruppenphase", group: "I", home: "France", away: "Iraq", kickoff: "2026-06-22T23:00:00+02:00", venue: "Lincoln Financial Field, Philadelphia" },
-  { id: 43, stage: "Gruppenphase", group: "I", home: "Norway", away: "Senegal", kickoff: "2026-06-23T02:00:00+02:00", venue: "MetLife Stadium, New York / New Jersey" },
-  { id: 44, stage: "Gruppenphase", group: "J", home: "Jordan", away: "Algeria", kickoff: "2026-06-23T05:00:00+02:00", venue: "Levi's Stadium, San Francisco Bay Area" },
-  { id: 45, stage: "Gruppenphase", group: "K", home: "Portugal", away: "Uzbekistan", kickoff: "2026-06-23T19:00:00+02:00", venue: "NRG Stadium, Houston" },
-  { id: 46, stage: "Gruppenphase", group: "L", home: "England", away: "Ghana", kickoff: "2026-06-23T22:00:00+02:00", venue: "Gillette Stadium, Boston" },
-  { id: 47, stage: "Gruppenphase", group: "L", home: "Panama", away: "Croatia", kickoff: "2026-06-24T01:00:00+02:00", venue: "BMO Field, Toronto" },
-  { id: 48, stage: "Gruppenphase", group: "K", home: "Colombia", away: "Congo DR", kickoff: "2026-06-24T04:00:00+02:00", venue: "Estadio Akron, Guadalajara" },
-  { id: 49, stage: "Gruppenphase", group: "B", home: "Switzerland", away: "Canada", kickoff: "2026-06-24T18:00:00+02:00", venue: "BC Place, Vancouver" },
-  { id: 50, stage: "Gruppenphase", group: "B", home: "Bosnia and Herzegovina", away: "Qatar", kickoff: "2026-06-24T18:00:00+02:00", venue: "Lumen Field, Seattle" },
-  { id: 51, stage: "Gruppenphase", group: "C", home: "Scotland", away: "Brazil", kickoff: "2026-06-24T21:00:00+02:00", venue: "Hard Rock Stadium, Miami" },
-  { id: 52, stage: "Gruppenphase", group: "C", home: "Morocco", away: "Haiti", kickoff: "2026-06-24T21:00:00+02:00", venue: "Mercedes-Benz Stadium, Atlanta" },
-  { id: 53, stage: "Gruppenphase", group: "A", home: "Czechia", away: "Mexico", kickoff: "2026-06-25T00:00:00+02:00", venue: "Mexico City Stadium" },
-  { id: 54, stage: "Gruppenphase", group: "A", home: "South Africa", away: "Korea Republic", kickoff: "2026-06-25T00:00:00+02:00", venue: "Estadio Monterrey" },
-  { id: 55, stage: "Gruppenphase", group: "E", home: "Ecuador", away: "Germany", kickoff: "2026-06-25T19:00:00+02:00", venue: "MetLife Stadium, New York / New Jersey" },
-  { id: 56, stage: "Gruppenphase", group: "E", home: "Curaçao", away: "Côte d'Ivoire", kickoff: "2026-06-25T19:00:00+02:00", venue: "Lincoln Financial Field, Philadelphia" },
-  { id: 57, stage: "Gruppenphase", group: "F", home: "Japan", away: "Sweden", kickoff: "2026-06-25T22:00:00+02:00", venue: "AT&T Stadium, Dallas" },
-  { id: 58, stage: "Gruppenphase", group: "F", home: "Tunisia", away: "Netherlands", kickoff: "2026-06-25T22:00:00+02:00", venue: "Arrowhead Stadium, Kansas City" },
-  { id: 59, stage: "Gruppenphase", group: "D", home: "Türkiye", away: "USA", kickoff: "2026-06-26T01:00:00+02:00", venue: "SoFi Stadium, Los Angeles" },
-  { id: 60, stage: "Gruppenphase", group: "D", home: "Paraguay", away: "Australia", kickoff: "2026-06-26T01:00:00+02:00", venue: "Levi's Stadium, San Francisco Bay Area" },
-  { id: 61, stage: "Gruppenphase", group: "I", home: "Norway", away: "France", kickoff: "2026-06-26T18:00:00+02:00", venue: "Gillette Stadium, Boston" },
-  { id: 62, stage: "Gruppenphase", group: "I", home: "Senegal", away: "Iraq", kickoff: "2026-06-26T18:00:00+02:00", venue: "BMO Field, Toronto" },
-  { id: 63, stage: "Gruppenphase", group: "H", home: "Cabo Verde", away: "Saudi Arabia", kickoff: "2026-06-26T23:00:00+02:00", venue: "NRG Stadium, Houston" },
-  { id: 64, stage: "Gruppenphase", group: "H", home: "Uruguay", away: "Spain", kickoff: "2026-06-26T23:00:00+02:00", venue: "Guadalajara Stadium" },
-  { id: 65, stage: "Gruppenphase", group: "G", home: "Egypt", away: "Iran", kickoff: "2026-06-27T02:00:00+02:00", venue: "Lumen Field, Seattle" },
-  { id: 66, stage: "Gruppenphase", group: "G", home: "New Zealand", away: "Belgium", kickoff: "2026-06-27T02:00:00+02:00", venue: "BC Place, Vancouver" },
-  { id: 67, stage: "Gruppenphase", group: "L", home: "Panama", away: "England", kickoff: "2026-06-27T20:00:00+02:00", venue: "New York New Jersey Stadium" },
-  { id: 68, stage: "Gruppenphase", group: "L", home: "Croatia", away: "Ghana", kickoff: "2026-06-27T20:00:00+02:00", venue: "Philadelphia Stadium" },
-  { id: 69, stage: "Gruppenphase", group: "J", home: "Algeria", away: "Austria", kickoff: "2026-06-28T01:00:00+02:00", venue: "Kansas City Stadium" },
-  { id: 70, stage: "Gruppenphase", group: "J", home: "Jordan", away: "Argentina", kickoff: "2026-06-28T01:00:00+02:00", venue: "Dallas Stadium" },
-  { id: 71, stage: "Gruppenphase", group: "K", home: "Colombia", away: "Portugal", kickoff: "2026-06-28T04:00:00+02:00", venue: "Miami Stadium" },
-  { id: 72, stage: "Gruppenphase", group: "K", home: "Congo DR", away: "Uzbekistan", kickoff: "2026-06-28T04:00:00+02:00", venue: "Atlanta Stadium" }
-];
-
-const roundOf32 = [
-  { match: "M73", date: "2026-06-28", title: "A2 vs B2", venue: "Los Angeles Stadium" },
-  { match: "M74", date: "2026-06-29", title: "Germany vs beste/r Dritte/r aus A/B/C/D/F", venue: "Boston Stadium" },
-  { match: "M75", date: "2026-06-29", title: "F1 vs C2", venue: "Estadio Monterrey" },
-  { match: "M76", date: "2026-06-29", title: "C1 vs F2", venue: "Houston Stadium" },
-  { match: "M77", date: "2026-06-30", title: "I1 vs beste/r Dritte/r aus C/D/F/G/H", venue: "New York New Jersey Stadium" },
-  { match: "M78", date: "2026-06-30", title: "E2 vs I2", venue: "Dallas Stadium" },
-  { match: "M79", date: "2026-06-30", title: "Mexico vs beste/r Dritte/r aus C/E/F/H/I", venue: "Mexico City Stadium" },
-  { match: "M80", date: "2026-07-01", title: "L1 vs beste/r Dritte/r aus E/H/I/J/K", venue: "Atlanta Stadium" },
-  { match: "M81", date: "2026-07-01", title: "USA vs beste/r Dritte/r aus B/E/F/I/J", venue: "San Francisco Bay Area Stadium" },
-  { match: "M82", date: "2026-07-01", title: "G1 vs beste/r Dritte/r aus A/E/H/I/J", venue: "Seattle Stadium" },
-  { match: "M83", date: "2026-07-02", title: "K2 vs L2", venue: "Toronto Stadium" },
-  { match: "M84", date: "2026-07-02", title: "H1 vs J2", venue: "Los Angeles Stadium" },
-  { match: "M85", date: "2026-07-02", title: "B1 vs beste/r Dritte/r aus E/F/G/I/J", venue: "BC Place Vancouver" },
-  { match: "M86", date: "2026-07-03", title: "J1 vs H2", venue: "Miami Stadium" },
-  { match: "M87", date: "2026-07-03", title: "K1 vs beste/r Dritte/r aus D/E/I/J/L", venue: "Kansas City Stadium" },
-  { match: "M88", date: "2026-07-03", title: "D2 vs G2", venue: "Dallas Stadium" }
-];
-
-const laterKnockout = {
-  "Achtelfinale": [
-    "M89: Sieger M74 vs Sieger M77 · 4. Juli · Philadelphia Stadium",
-    "M90: Sieger M73 vs Sieger M75 · 4. Juli · Houston Stadium",
-    "M91: Sieger M76 vs Sieger M78 · 5. Juli · New York New Jersey Stadium",
-    "M92: Sieger M79 vs Sieger M80 · 5. Juli · Mexico City Stadium",
-    "M93: Sieger M83 vs Sieger M84 · 6. Juli · Dallas Stadium",
-    "M94: Sieger M81 vs Sieger M82 · 6. Juli · Seattle Stadium",
-    "M95: Sieger M86 vs Sieger M88 · 7. Juli · Atlanta Stadium",
-    "M96: Sieger M85 vs Sieger M87 · 7. Juli · BC Place Vancouver"
-  ],
-  "Viertelfinale": [
-    "M97: Sieger M89 vs Sieger M90 · 9. Juli · Boston Stadium",
-    "M98: Sieger M93 vs Sieger M94 · 10. Juli · Los Angeles Stadium",
-    "M99: Sieger M91 vs Sieger M92 · 11. Juli · Miami Stadium",
-    "M100: Sieger M95 vs Sieger M96 · 11. Juli · Kansas City Stadium"
-  ],
-  "Halbfinale": [
-    "M101: Sieger M97 vs Sieger M98 · 14. Juli · Dallas Stadium",
-    "M102: Sieger M99 vs Sieger M100 · 15. Juli · Atlanta Stadium"
-  ],
-  "Finaltage": [
-    "M103: Spiel um Platz 3 · 18. Juli · Miami Stadium",
-    "M104: Finale · 19. Juli · New York New Jersey Stadium"
-  ]
-};
-
-const initialNow = new Date("2026-06-22T12:31:56+02:00");
-
-function formatDateTime(value) {
-  const dt = new Date(value);
-  return new Intl.DateTimeFormat("de-DE", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(dt);
-}
-
-function formatShort(value) {
-  const dt = new Date(value);
-  return new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(dt);
-}
-
-function buildStandings() {
-  const table = {};
-  Object.entries(groups).forEach(([group, teams]) => {
-    table[group] = teams.map((team) => ({ team, group, gp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0, rank: rankings[team] ?? 999 }));
-  });
-
-  completedMatches.forEach((m) => {
-    const rows = table[m.group];
-    const home = rows.find((r) => r.team === m.home);
-    const away = rows.find((r) => r.team === m.away);
-    if (!home || !away) return;
-    home.gp += 1; away.gp += 1;
-    home.gf += m.hg; home.ga += m.ag; home.gd = home.gf - home.ga;
-    away.gf += m.ag; away.ga += m.hg; away.gd = away.gf - away.ga;
-    if (m.hg > m.ag) {
-      home.w += 1; away.l += 1; home.pts += 3;
-    } else if (m.hg < m.ag) {
-      away.w += 1; home.l += 1; away.pts += 3;
-    } else {
-      home.d += 1; away.d += 1; home.pts += 1; away.pts += 1;
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WM 2026 Dashboard V2</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --amber: #d97706;
+      --rose: #dc2626;
+      --slate: #334155;
+      --shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+      --radius: 18px;
     }
-  });
 
-  Object.keys(table).forEach((group) => {
-    table[group] = table[group].sort((a, b) => {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.gd !== a.gd) return b.gd - a.gd;
-      if (b.gf !== a.gf) return b.gf - a.gf;
-      return a.rank - b.rank;
-    }).map((row, idx) => ({ ...row, pos: idx + 1 }));
-  });
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1,h2,h3,h4,p { margin: 0; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .title-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #dbeafe, #eff6ff);
+      color: var(--blue); font-size: 20px;
+    }
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: white;
+      min-height: 106px;
+    }
+    .metric small {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .metric strong {
+      display: block;
+      font-size: 28px;
+      margin-top: 10px;
+      line-height: 1.1;
+    }
+    .metric span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    select, input[type="text"], button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 11px 12px;
+      font: inherit;
+      color: var(--text);
+    }
+    button {
+      background: var(--text);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: white;
+      color: var(--text);
+    }
+    .prob-stack { display: grid; gap: 12px; }
+    .prob-row { display: grid; gap: 6px; }
+    .prob-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 14px; font-weight: 600;
+    }
+    .bar {
+      height: 11px; border-radius: 999px; overflow: hidden;
+      background: #e2e8f0;
+    }
+    .bar > div { height: 100%; }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .legend-box {
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .legend-box strong { display: block; margin-bottom: 6px; color: var(--text); font-size: 14px; }
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+    }
+    .tab-btn {
+      border-radius: 12px; border: 1px solid var(--line); background: white;
+      padding: 10px 14px; cursor: pointer; font-weight: 700; color: var(--text);
+    }
+    .tab-btn.active { background: var(--text); color: white; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .section-grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .row-list { display: grid; gap: 10px; }
+    .match-row {
+      padding: 14px; border-radius: 14px; border: 1px solid var(--line);
+      display: flex; justify-content: space-between; gap: 12px; align-items: center;
+      background: white;
+    }
+    .match-meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .chart-wrap { position: relative; min-height: 380px; }
+    canvas { width: 100% !important; height: 100% !important; }
+    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .result-card, .info-card {
+      border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: white;
+    }
+    .muted { color: var(--muted); }
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead { background: #f8fafc; color: var(--muted); }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    td.num, th.num { text-align: right; }
+    tr.qual { background: #ecfdf5; }
+    tr.third { background: #fff7ed; }
+    tr.out { background: #fff1f2; }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .filters > * { max-width: 220px; }
+    .groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .group-card { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .group-head {
+      padding: 12px 14px; background: #0f172a; color: white; font-weight: 700;
+    }
+    .status-badge {
+      display: inline-flex; align-items: center; border-radius: 999px;
+      font-size: 11px; font-weight: 700; padding: 4px 8px;
+    }
+    .status-in { background: #dcfce7; color: #166534; }
+    .status-out { background: #fee2e2; color: #991b1b; }
+    .stack { display: grid; gap: 14px; }
+    .small-note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .bracket-stage {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(250px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .stage-col { display: grid; gap: 12px; }
+    .stage-col h3 { font-size: 16px; margin: 0 0 4px 0; }
+    .bracket-match {
+      background: white; border: 1px solid var(--line); box-shadow: var(--shadow);
+      border-radius: 14px; padding: 12px;
+    }
+    .bracket-match .when { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .teamline {
+      display: flex; justify-content: space-between; gap: 10px;
+      padding: 6px 0; border-top: 1px dashed #e5e7eb;
+    }
+    .teamline:first-of-type { border-top: none; }
+    .live-dot {
+      display: inline-block; width: 9px; height: 9px; border-radius: 999px; margin-right: 6px;
+      background: #16a34a;
+    }
+    .status-banner {
+      display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      padding: 12px 14px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+      border-radius: 14px; margin-bottom: 16px; font-size: 13px; font-weight: 600;
+    }
+    .source-list { display: grid; gap: 8px; margin-top: 10px; font-size: 13px; }
+    .source-list code { background: #f1f5f9; padding: 2px 6px; border-radius: 8px; }
+    .footer-note {
+      margin-top: 18px; padding: 14px; border-radius: 14px;
+      border: 1px solid #fcd34d; background: #fffbeb; color: #92400e; font-size: 13px; line-height: 1.6;
+    }
 
-  return table;
-}
-
-function buildFormIndex(team, standings) {
-  const row = Object.values(standings).flat().find((r) => r.team === team);
-  const rank = rankings[team] ?? 90;
-  const rankScore = Math.max(0, (86 - Math.min(rank, 86)) / 85);
-  if (!row || row.gp === 0) {
-    return { rankScore, perfScore: 0.5, total: 0.55 * rankScore + 0.45 * 0.5 };
-  }
-  const ptsPerGame = row.pts / row.gp;
-  const gdPerGame = Math.max(-3, Math.min(3, row.gd / row.gp));
-  const goalsPerGame = Math.max(0, Math.min(4, row.gf / row.gp));
-  const perfScore = Math.max(0, Math.min(1, ptsPerGame / 3 * 0.55 + ((gdPerGame + 3) / 6) * 0.25 + (goalsPerGame / 4) * 0.20));
-  const total = 0.55 * rankScore + 0.45 * perfScore;
-  return { rankScore, perfScore, total };
-}
-
-function winProbabilities(teamA, teamB, standings) {
-  const a = buildFormIndex(teamA, standings);
-  const b = buildFormIndex(teamB, standings);
-  const diff = a.total - b.total;
-  const draw = Math.max(0.16, 0.28 - Math.min(0.16, Math.abs(diff) * 0.30));
-  const nonDraw = 1 - draw;
-  const logisticA = 1 / (1 + Math.exp(-diff * 4.7));
-  const pa = nonDraw * logisticA;
-  const pb = nonDraw * (1 - logisticA);
-  return {
-    pa: Math.round(pa * 1000) / 10,
-    pd: Math.round(draw * 1000) / 10,
-    pb: Math.round(pb * 1000) / 10,
-    details: { a, b }
-  };
-}
-
-const colors = ["#0f172a", "#2563eb", "#16a34a", "#7c3aed", "#ea580c", "#dc2626"];
-
-export default function WorldCupDashboard() {
-  const [groupFilter, setGroupFilter] = useState("ALL");
-  const [search, setSearch] = useState("");
-  const [teamA, setTeamA] = useState("Argentina");
-  const [teamB, setTeamB] = useState("Austria");
-
-  const standings = useMemo(() => buildStandings(), []);
-  const groupCards = useMemo(() => Object.entries(standings), [standings]);
-  const allRows = useMemo(() => Object.values(standings).flat(), [standings]);
-  const upcoming = useMemo(() => upcomingMatches.filter((m) => new Date(m.kickoff) > initialNow), []);
-  const nextKickoffs = useMemo(() => upcoming.slice(0, 8), [upcoming]);
-  const recentResults = useMemo(() => [...completedMatches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 12), []);
-
-  const filteredGroups = useMemo(() => {
-    return groupCards
-      .filter(([group]) => groupFilter === "ALL" || group === groupFilter)
-      .map(([group, rows]) => {
-        const term = search.trim().toLowerCase();
-        if (!term) return [group, rows];
-        return [group, rows.filter((r) => r.team.toLowerCase().includes(term))];
-      })
-      .filter(([, rows]) => rows.length > 0);
-  }, [groupCards, groupFilter, search]);
-
-  const topTeams = useMemo(() => {
-    return [...allRows]
-      .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
-      .slice(0, 10)
-      .map((r) => ({ team: r.team, Punkte: r.pts, TorDiff: r.gd, Rang: rankings[r.team] ?? 90 }));
-  }, [allRows]);
-
-  const prob = useMemo(() => winProbabilities(teamA, teamB, standings), [teamA, teamB, standings]);
-
-  const thirdPlaceTable = useMemo(() => {
-    return Object.values(standings)
-      .map((rows) => rows[2])
-      .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.rank - b.rank)
-      .map((r, idx) => ({ ...r, rankIndex: idx + 1, advance: idx < 8 }));
-  }, [standings]);
-
-  const nextStageHighlights = [
-    { label: "Bereits sicher im Sechzehntelfinale", value: ["Mexico", "USA", "Germany"].join(" · ") },
-    { label: "Aktuell bestes Drittplatzierten-Ranking", value: thirdPlaceTable.slice(0, 8).map((r) => r.team).join(" · ") },
-    { label: "Nächstes KO-Datum", value: "28.06.2026 – Start der Runde der letzten 32" }
-  ];
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="grid md:grid-cols-[1.7fr_1fr] gap-4">
-          <Card className="rounded-2xl shadow-sm border-slate-200">
-            <CardHeader>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="text-3xl flex items-center gap-2"><Trophy className="w-7 h-7 text-amber-500" /> WM 2026 Dashboard</CardTitle>
-                  <CardDescription className="mt-1 text-sm leading-6">
-                    Interaktiver Überblick über Ergebnisse, Tabellen, nächste Anstöße und die anstehenden K.o.-Phasen.
-                    Datenstand der eingebetteten Daten: <span className="font-medium">22.06.2026 · ca. 12:30 Uhr (MESZ)</span>.
-                  </CardDescription>
-                </div>
-                <Badge variant="outline" className="rounded-full px-3 py-1 text-xs border-blue-200 text-blue-700 bg-blue-50">
-                  <RefreshCw className="w-3.5 h-3.5 mr-1" /> Snapshot-Modus
-                </Badge>
+    @media (max-width: 1200px) {
+      .hero, .section-grid-2, .bracket-stage, .groups-grid { grid-template-columns: 1fr; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .metric-grid, .controls, .legend-grid, .results-grid { grid-template-columns: 1fr; }
+      .match-row { flex-direction: column; align-items: flex-start; }
+      .container { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+          <div>
+            <div class="title">
+              <div class="title-icon">🏆</div>
+              <div>
+                <h1>WM 2026 Dashboard V2</h1>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <MetricCard icon={<Shield className="w-4 h-4" />} title="Abgeschlossene Spiele" value={`${completedMatches.length}`} sub="Stand: Ende 21.06 / Nacht 22.06" />
-                <MetricCard icon={<CalendarClock className="w-4 h-4" />} title="Nächster Anstoß" value={formatShort(nextKickoffs[0]?.kickoff)} sub={`${nextKickoffs[0]?.home} vs ${nextKickoffs[0]?.away}`} />
-                <MetricCard icon={<TrendingUp className="w-4 h-4" />} title="Beste Offensive" value="Deutschland" sub="9 Tore nach 2 Spielen" />
-                <MetricCard icon={<Clock3 className="w-4 h-4" />} title="KO-Start" value="28.06.2026" sub="Runde der letzten 32" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-sm border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Swords className="w-4 h-4 text-rose-600" /> Prognose-Modul</CardTitle>
-              <CardDescription>
-                Heuristische Sieg-Wahrscheinlichkeiten auf Basis von Turnierform und FIFA-Ranking. <span className="font-medium">Keine Wettquote, kein offizielles Modell.</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Select value={teamA} onValueChange={setTeamA}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Team A" /></SelectTrigger>
-                  <SelectContent>{Object.keys(rankings).map((team) => <SelectItem key={team} value={team}>{team}</SelectItem>)}</SelectContent>
-                </Select>
-                <Select value={teamB} onValueChange={setTeamB}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Team B" /></SelectTrigger>
-                  <SelectContent>{Object.keys(rankings).map((team) => <SelectItem key={team} value={team}>{team}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <ProbBar label={`${teamA} Sieg`} value={prob.pa} color="bg-blue-600" />
-                <ProbBar label="Remis" value={prob.pd} color="bg-slate-500" />
-                <ProbBar label={`${teamB} Sieg`} value={prob.pb} color="bg-emerald-600" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs text-slate-600 pt-1">
-                <div className="rounded-xl bg-slate-100 p-3">
-                  <div className="font-medium text-slate-900 mb-1">{teamA}</div>
-                  <div>FIFA-Rang: #{rankings[teamA] ?? "–"}</div>
-                  <div>Ranking-Stärke: {(prob.details.a.rankScore * 100).toFixed(0)} / 100</div>
-                  <div>Turnierform: {(prob.details.a.perfScore * 100).toFixed(0)} / 100</div>
-                </div>
-                <div className="rounded-xl bg-slate-100 p-3">
-                  <div className="font-medium text-slate-900 mb-1">{teamB}</div>
-                  <div>FIFA-Rang: #{rankings[teamB] ?? "–"}</div>
-                  <div>Ranking-Stärke: {(prob.details.b.rankScore * 100).toFixed(0)} / 100</div>
-                  <div>Turnierform: {(prob.details.b.perfScore * 100).toFixed(0)} / 100</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <p class="subtitle">
+              GitHub-Pages-fähige Einzeldatei mit <strong>Live-Daten-Fallback</strong>, automatischer Gruppentabelle,
+              Drittplatzierten-Ranking und visuellem <strong>K.o.-Bracket</strong>.
+            </p>
+          </div>
+          <div class="pill">🔄 Live-Fetch + Snapshot-Fallback</div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2 h-auto bg-transparent p-0">
-            <TabsTrigger value="overview" className="rounded-xl border bg-white data-[state=active]:bg-slate-900 data-[state=active]:text-white">Überblick</TabsTrigger>
-            <TabsTrigger value="groups" className="rounded-xl border bg-white data-[state=active]:bg-slate-900 data-[state=active]:text-white">Gruppen</TabsTrigger>
-            <TabsTrigger value="matches" className="rounded-xl border bg-white data-[state=active]:bg-slate-900 data-[state=active]:text-white">Spiele</TabsTrigger>
-            <TabsTrigger value="knockout" className="rounded-xl border bg-white data-[state=active]:bg-slate-900 data-[state=active]:text-white">K.o.-Phase</TabsTrigger>
-            <TabsTrigger value="odds" className="rounded-xl border bg-white data-[state=active]:bg-slate-900 data-[state=active]:text-white">Form & Chancen</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4">
-              <Card className="rounded-2xl shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">Nächste Anstoßzeiten</CardTitle>
-                  <CardDescription>Die nächsten 8 Spiele in deiner Zeitzone.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {nextKickoffs.map((m) => (
-                    <div key={m.id} className="flex flex-col md:flex-row md:items-center justify-between gap-2 rounded-xl border border-slate-200 p-3">
-                      <div>
-                        <div className="font-medium">Gruppe {m.group} · {m.home} vs {m.away}</div>
-                        <div className="text-sm text-slate-600">{m.venue}</div>
-                      </div>
-                      <div className="text-sm md:text-right">
-                        <div className="font-semibold">{formatDateTime(m.kickoff)}</div>
-                        <div className="text-slate-500">{m.stage}</div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">Top-Teams nach aktuellem Stand</CardTitle>
-                  <CardDescription>Punkte-Tabelle aus den bisher erfassten Spielen.</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[360px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topTeams} layout="vertical" margin={{ left: 10, right: 10, top: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="team" width={100} tick={{ fontSize: 12 }} />
-                      <Tooltip />
-                      <Bar dataKey="Punkte" radius={[0, 8, 8, 0]}>
-                        {topTeams.map((_, idx) => <Cell key={`top-${idx}`} fill={colors[idx % colors.length]} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid lg:grid-cols-[1.3fr_1fr] gap-4">
-              <Card className="rounded-2xl shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">Zuletzt erfasste Ergebnisse</CardTitle>
-                  <CardDescription>Die 12 jüngsten Resultate im Snapshot.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-2">
-                  {recentResults.map((m) => (
-                    <div key={m.id} className="rounded-xl border border-slate-200 p-3">
-                      <div className="text-xs uppercase text-slate-500 mb-1">Gruppe {m.group} · {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(m.date))}</div>
-                      <div className="font-medium">{m.home} <span className="text-blue-700">{m.hg}</span> : <span className="text-blue-700">{m.ag}</span> {m.away}</div>
-                      <div className="text-sm text-slate-600">{m.venue}</div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">KO-Radar</CardTitle>
-                  <CardDescription>Aktueller Blick auf die nächste Turnierphase.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {nextStageHighlights.map((h) => (
-                    <div key={h.label} className="rounded-xl bg-slate-100 p-3">
-                      <div className="text-xs uppercase tracking-wide text-slate-500">{h.label}</div>
-                      <div className="font-medium mt-1 leading-6">{h.value}</div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="groups" className="space-y-4">
-            <Card className="rounded-2xl shadow-sm">
-              <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-lg">Gruppenstände A–L</CardTitle>
-                    <CardDescription>Automatisch aus den erfassten Ergebnissen berechnet.</CardDescription>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Select value={groupFilter} onValueChange={setGroupFilter}>
-                      <SelectTrigger className="w-[160px] rounded-xl"><SelectValue placeholder="Gruppe wählen" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ALL">Alle Gruppen</SelectItem>
-                        {Object.keys(groups).map((g) => <SelectItem key={g} value={g}>Gruppe {g}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Team suchen" className="pl-9 w-[180px] rounded-xl" />
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="grid xl:grid-cols-2 gap-4">
-                {filteredGroups.map(([group, rows]) => (
-                  <div key={group} className="rounded-2xl border border-slate-200 overflow-hidden bg-white">
-                    <div className="px-4 py-3 bg-slate-900 text-white font-semibold">Gruppe {group}</div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-slate-100 text-slate-600">
-                          <tr>
-                            <th className="text-left p-2">#</th>
-                            <th className="text-left p-2">Team</th>
-                            <th className="text-right p-2">Sp</th>
-                            <th className="text-right p-2">Pkt</th>
-                            <th className="text-right p-2">T</th>
-                            <th className="text-right p-2">G</th>
-                            <th className="text-right p-2">Diff</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {rows.map((r) => (
-                            <tr key={r.team} className={r.pos <= 2 ? "bg-emerald-50" : r.pos === 3 ? "bg-amber-50" : ""}>
-                              <td className="p-2 font-medium">{r.pos}</td>
-                              <td className="p-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span>{r.team}</span>
-                                  <Badge variant="outline" className="text-[10px] rounded-full">FIFA #{rankings[r.team] ?? "–"}</Badge>
-                                </div>
-                              </td>
-                              <td className="p-2 text-right">{r.gp}</td>
-                              <td className="p-2 text-right font-semibold">{r.pts}</td>
-                              <td className="p-2 text-right">{r.gf}:{r.ga}</td>
-                              <td className="p-2 text-right">{r.w}/{r.d}/{r.l}</td>
-                              <td className="p-2 text-right">{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Aktuelles Drittplatzierten-Ranking</CardTitle>
-                <CardDescription>Die acht besten Drittplatzierten ziehen zusätzlich in die Runde der letzten 32 ein.</CardDescription>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-100 text-slate-600">
-                    <tr>
-                      <th className="text-left p-2">Rang</th>
-                      <th className="text-left p-2">Team</th>
-                      <th className="text-left p-2">Gruppe</th>
-                      <th className="text-right p-2">Pkt</th>
-                      <th className="text-right p-2">Diff</th>
-                      <th className="text-right p-2">Tore</th>
-                      <th className="text-left p-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {thirdPlaceTable.map((r) => (
-                      <tr key={r.team} className={r.advance ? "bg-emerald-50" : "bg-rose-50"}>
-                        <td className="p-2 font-medium">{r.rankIndex}</td>
-                        <td className="p-2">{r.team}</td>
-                        <td className="p-2">{r.group}</td>
-                        <td className="p-2 text-right">{r.pts}</td>
-                        <td className="p-2 text-right">{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
-                        <td className="p-2 text-right">{r.gf}</td>
-                        <td className="p-2">{r.advance ? <Badge className="bg-emerald-600">derzeit drin</Badge> : <Badge variant="destructive">derzeit draußen</Badge>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="matches" className="space-y-4">
-            <Card className="rounded-2xl shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Vollständige Match-Liste (kommende Spiele)</CardTitle>
-                <CardDescription>Sortiert nach Anstoßzeit in deiner Zeitzone.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {upcoming.map((m) => {
-                  const p = winProbabilities(m.home, m.away, standings);
-                  return (
-                    <div key={m.id} className="rounded-xl border border-slate-200 p-3">
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
-                        <div>
-                          <div className="font-medium">{m.home} vs {m.away} <span className="text-slate-500">· Gruppe {m.group}</span></div>
-                          <div className="text-sm text-slate-600">{m.venue}</div>
-                        </div>
-                        <div className="text-sm lg:text-right">
-                          <div className="font-semibold">{formatDateTime(m.kickoff)}</div>
-                          <div className="text-slate-500">Heuristik: {m.home} {p.pa}% · Remis {p.pd}% · {m.away} {p.pb}%</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="knockout" className="space-y-4">
-            <Card className="rounded-2xl shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Runde der letzten 32</CardTitle>
-                <CardDescription>Offiziell angesetzte Paarungen bzw. Platzhalter inkl. bereits fixierter Gruppensieger-Plätze.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid md:grid-cols-2 gap-3">
-                {roundOf32.map((m) => (
-                  <div key={m.match} className="rounded-xl border border-slate-200 p-3 bg-white">
-                    <div className="text-xs uppercase text-slate-500">{m.match} · {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(m.date))}</div>
-                    <div className="font-medium mt-1">{m.title}</div>
-                    <div className="text-sm text-slate-600 mt-1">{m.venue}</div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <div className="grid lg:grid-cols-3 gap-4">
-              {Object.entries(laterKnockout).map(([stage, matches]) => (
-                <Card className="rounded-2xl shadow-sm" key={stage}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{stage}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {matches.map((m) => (
-                      <div key={m} className="rounded-xl bg-slate-100 p-3 text-sm leading-6">{m}</div>
-                    ))}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="odds" className="space-y-4">
-            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-4">
-              <Card className="rounded-2xl shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">Form vs. FIFA-Ranking</CardTitle>
-                  <CardDescription>Je weiter rechts und oben, desto stärker ist die Kombination aus aktueller Turnierform und Vorab-Ranking.</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[420px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 24, bottom: 20, left: 10 }}>
-                      <CartesianGrid />
-                      <XAxis type="number" dataKey="rankInv" name="Ranking-Stärke" domain={[0, 100]} tickFormatter={(v) => `${v}`} />
-                      <YAxis type="number" dataKey="form" name="Turnierform" domain={[0, 100]} tickFormatter={(v) => `${v}`} />
-                      <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(value) => `${Number(value).toFixed(0)}`} labelFormatter={() => ""} />
-                      <Scatter data={allRows.map((r) => ({ team: r.team, rankInv: ((86 - (rankings[r.team] ?? 86)) / 85) * 100, form: buildFormIndex(r.team, standings).perfScore * 100, z: r.pts }))} fill="#2563eb">
-                        {allRows.map((r, idx) => <Cell key={`scatter-${idx}`} fill={r.pos === 1 ? "#16a34a" : r.pos === 2 ? "#2563eb" : r.pos === 3 ? "#f59e0b" : "#94a3b8"} />)}
-                      </Scatter>
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg">Modell-Notizen</CardTitle>
-                  <CardDescription>So wird die Heuristik berechnet.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm leading-6 text-slate-700">
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="font-semibold text-slate-900 mb-1">1) FIFA-Stärke</div>
-                    <div>Das Vorab-Ranking wird auf 0–100 normiert. Ein niedriger Rang (z. B. #1) führt zu einem höheren Stärke-Score.</div>
-                  </div>
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="font-semibold text-slate-900 mb-1">2) Turnierform</div>
-                    <div>Punkte pro Spiel, Torverhältnis pro Spiel und Tore pro Spiel fließen in einen Performance-Score ein.</div>
-                  </div>
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="font-semibold text-slate-900 mb-1">3) Ergebniswahrscheinlichkeiten</div>
-                    <div>Aus der Differenz beider Team-Scores berechnet ein logistisches Modell Sieg / Remis / Niederlage. Das Ergebnis ist bewusst transparent und interpretierbar – nicht „magisch“.</div>
-                  </div>
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
-                    <div className="font-semibold mb-1">Wichtig</div>
-                    <div>Die angezeigten Werte sind eine <strong>Heuristik</strong>. Verletzungen, Rotationen, Sperren oder echte Marktquoten sind hier nicht enthalten.</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <div class="metric-grid" id="metricGrid"></div>
       </div>
+
+      <div class="card">
+        <h2 style="margin-bottom:8px;">Prognose-Modul</h2>
+        <p class="subtitle">Heuristische Wahrscheinlichkeiten auf Basis von Turnierform und FIFA-Ranking.</p>
+        <div class="controls">
+          <select id="teamASelect"></select>
+          <select id="teamBSelect"></select>
+        </div>
+        <div class="prob-stack" id="probStack"></div>
+        <div class="legend-grid" id="legendGrid"></div>
+      </div>
+    </section>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Überblick</button>
+      <button class="tab-btn" data-tab="groups">Gruppen</button>
+      <button class="tab-btn" data-tab="matches">Spiele</button>
+      <button class="tab-btn" data-tab="bracket">K.o.-Bracket</button>
+      <button class="tab-btn" data-tab="model">Live & Modell</button>
     </div>
-  );
-}
 
-function MetricCard({ icon, title, value, sub }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 p-4 bg-white">
-      <div className="flex items-center justify-between text-slate-500 text-xs uppercase tracking-wide">
-        <span>{title}</span>
-        {icon}
+    <section class="tab-panel active" id="tab-overview">
+      <div class="status-banner" id="statusBanner"></div>
+      <div class="section-grid-2">
+        <div class="card">
+          <h2 style="margin-bottom:6px;">Nächste Anstoßzeiten</h2>
+          <p class="subtitle">Automatisch aus Live-/Snapshot-Daten sortiert.</p>
+          <div class="row-list" id="nextKickoffs"></div>
+        </div>
+        <div class="card">
+          <h2 style="margin-bottom:6px;">Top-Teams nach aktuellem Stand</h2>
+          <p class="subtitle">Punkte-Tabelle auf Basis der berechneten Gruppenstände.</p>
+          <div class="chart-wrap"><canvas id="topTeamsChart"></canvas></div>
+        </div>
       </div>
-      <div className="text-2xl font-semibold mt-2">{value}</div>
-      <div className="text-sm text-slate-600 mt-1">{sub}</div>
-    </div>
-  );
-}
 
-function ProbBar({ label, value, color }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-sm">
-        <span>{label}</span>
-        <span className="font-medium">{value}%</span>
+      <div class="section-grid-2">
+        <div class="card">
+          <h2 style="margin-bottom:6px;">Zuletzt erfasste Ergebnisse</h2>
+          <p class="subtitle">Die jüngsten Resultate aus dem aktuellen Datenstand.</p>
+          <div class="results-grid" id="recentResults"></div>
+        </div>
+        <div class="card">
+          <h2 style="margin-bottom:6px;">KO-Radar</h2>
+          <p class="subtitle">Früher Überblick auf sichere und wahrscheinlichste K.o.-Konstellationen.</p>
+          <div class="stack" id="koRadar"></div>
+        </div>
       </div>
-      <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
+    </section>
+
+    <section class="tab-panel" id="tab-groups">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin-bottom:6px;">Gruppenstände A–L</h2>
+            <p class="subtitle">Aus allen bekannten bzw. live geladenen Gruppenspielen berechnet.</p>
+          </div>
+          <div class="filters">
+            <select id="groupFilter">
+              <option value="ALL">Alle Gruppen</option>
+            </select>
+            <input type="text" id="teamSearch" placeholder="Team suchen" />
+          </div>
+        </div>
+        <div class="groups-grid" id="groupsGrid"></div>
       </div>
-    </div>
-  );
-}
+
+      <div class="card">
+        <h2 style="margin-bottom:6px;">Aktuelles Drittplatzierten-Ranking</h2>
+        <p class="subtitle">Die acht besten Drittplatzierten ziehen zusätzlich in die Runde der letzten 32 ein.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rang</th><th>Team</th><th>Gruppe</th>
+                <th class="num">Pkt</th><th class="num">Diff</th><th class="num">Tore</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="thirdPlaceBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tab-matches">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin-bottom:6px;">Kommende Spiele</h2>
+            <p class="subtitle">Mit Uhrzeit, Gruppe, Venue und Heuristik je Paarung.</p>
+          </div>
+          <div class="filters">
+            <select id="matchStageFilter">
+              <option value="ALL">Alle Phasen</option>
+              <option value="Gruppenphase">Nur Gruppenphase</option>
+              <option value="Knockout">Nur K.o.-Spiele</option>
+            </select>
+          </div>
+        </div>
+        <div class="row-list" id="matchList"></div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tab-bracket">
+      <div class="card">
+        <h2 style="margin-bottom:6px;">K.o.-Bracket</h2>
+        <p class="subtitle">Turnierbaum von der Runde der letzten 32 bis zum Finale. Platzhalter werden automatisch durch bekannte Teams ersetzt, sobald die Paarungen feststehen.</p>
+        <div class="bracket-stage" id="bracketStage"></div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tab-model">
+      <div class="section-grid-2">
+        <div class="card">
+          <h2 style="margin-bottom:6px;">Form vs. FIFA-Ranking</h2>
+          <p class="subtitle">Je weiter rechts und oben, desto stärker ist die Kombination aus Turnierform und Vorab-Ranking.</p>
+          <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h2 style="margin-bottom:6px;">Live-Daten & Quellen</h2>
+          <p class="subtitle">V2 versucht zuerst den öffentlichen Live-Datenfeed zu laden und fällt andernfalls auf den integrierten Snapshot zurück.</p>
+          <div class="source-list">
+            <div><strong>Live-Games:</strong> <code>https://worldcup26.ir/get/games</code></div>
+            <div><strong>Live-Gruppen:</strong> <code>https://worldcup26.ir/get/groups</code></div>
+            <div><strong>Snapshot:</strong> eingebettet in dieser HTML-Datei</div>
+          </div>
+          <div class="stack" style="margin-top:14px;">
+            <div class="info-card">
+              <strong>Modell-Logik</strong>
+              <p class="small-note" style="margin-top:6px;">
+                Das Modell kombiniert normiertes FIFA-Ranking mit aktueller Turnierform (Punkte/Spiel, Torverhältnis/Spiel, Tore/Spiel) und berechnet daraus Sieg-/Remis-/Niederlagen-Wahrscheinlichkeiten.
+              </p>
+            </div>
+            <div class="info-card">
+              <strong>Wichtiger Hinweis</strong>
+              <p class="small-note" style="margin-top:6px;">
+                Die Wahrscheinlichkeiten sind eine Heuristik für ein Dashboard – keine offiziellen Wettquoten und kein Ersatz für Echtzeit-Statistik-Feeds.
+              </p>
+            </div>
+            <div class="info-card" id="liveStatusCard">
+              <strong>Fetch-Status</strong>
+              <p class="small-note" style="margin-top:6px;" id="liveStatusText"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-note">
+        Wenn der öffentliche Feed nicht erreichbar ist oder CORS blockiert, bleibt das Dashboard trotzdem voll funktionsfähig – dann mit dem integrierten Snapshot als Fallback.
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const RANKINGS = {
+      "Argentina": 1, "Spain": 2, "France": 3, "England": 4, "Portugal": 5, "Brazil": 6, "Morocco": 7, "Netherlands": 8,
+      "Belgium": 9, "Germany": 10, "Croatia": 11, "Colombia": 13, "Mexico": 14, "Senegal": 15, "Uruguay": 16, "USA": 17,
+      "Japan": 18, "Switzerland": 19, "Iran": 20, "Türkiye": 22, "Ecuador": 23, "Austria": 24, "Korea Republic": 25,
+      "Australia": 27, "Algeria": 28, "Egypt": 29, "Canada": 30, "Norway": 31, "Côte d'Ivoire": 33, "Panama": 34,
+      "Sweden": 38, "Czechia": 40, "Paraguay": 41, "Scotland": 42, "Tunisia": 45, "Congo DR": 46, "Uzbekistan": 50,
+      "Qatar": 56, "Iraq": 57, "South Africa": 60, "Saudi Arabia": 61, "Jordan": 63, "Bosnia and Herzegovina": 64,
+      "Cabo Verde": 67, "Curaçao": 82, "Haiti": 83, "New Zealand": 85, "Ghana": 73
+    };
+
+    const GROUPS = {
+      A: ["Mexico", "South Africa", "Korea Republic", "Czechia"],
+      B: ["Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland"],
+      C: ["Brazil", "Morocco", "Haiti", "Scotland"],
+      D: ["USA", "Paraguay", "Australia", "Türkiye"],
+      E: ["Germany", "Côte d'Ivoire", "Ecuador", "Curaçao"],
+      F: ["Netherlands", "Japan", "Sweden", "Tunisia"],
+      G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+      H: ["Spain", "Cabo Verde", "Saudi Arabia", "Uruguay"],
+      I: ["France", "Senegal", "Iraq", "Norway"],
+      J: ["Argentina", "Algeria", "Austria", "Jordan"],
+      K: ["Portugal", "Congo DR", "Uzbekistan", "Colombia"],
+      L: ["England", "Croatia", "Ghana", "Panama"]
+    };
+
+    const SNAPSHOT = {
+      source: "snapshot",
+      generatedAt: "2026-06-22T12:31:56+02:00",
+      completedMatches: [
+        { id: 1, kickoff: "2026-06-11T21:00:00+02:00", group: "A", home: "Mexico", away: "South Africa", homeScore: 2, awayScore: 0, venue: "Mexico City Stadium", stage: "group" },
+        { id: 2, kickoff: "2026-06-12T03:00:00+02:00", group: "A", home: "Korea Republic", away: "Czechia", homeScore: 2, awayScore: 1, venue: "Guadalajara Stadium", stage: "group" },
+        { id: 3, kickoff: "2026-06-12T21:00:00+02:00", group: "B", home: "Canada", away: "Bosnia and Herzegovina", homeScore: 1, awayScore: 1, venue: "Toronto Stadium", stage: "group" },
+        { id: 4, kickoff: "2026-06-13T03:00:00+02:00", group: "D", home: "USA", away: "Paraguay", homeScore: 4, awayScore: 1, venue: "Los Angeles Stadium", stage: "group" },
+        { id: 5, kickoff: "2026-06-14T00:00:00+02:00", group: "B", home: "Qatar", away: "Switzerland", homeScore: 1, awayScore: 1, venue: "San Francisco Bay Area Stadium", stage: "group" },
+        { id: 6, kickoff: "2026-06-14T03:00:00+02:00", group: "C", home: "Brazil", away: "Morocco", homeScore: 1, awayScore: 1, venue: "New York New Jersey Stadium", stage: "group" },
+        { id: 7, kickoff: "2026-06-14T06:00:00+02:00", group: "C", home: "Haiti", away: "Scotland", homeScore: 0, awayScore: 1, venue: "Boston Stadium", stage: "group" },
+        { id: 8, kickoff: "2026-06-14T09:00:00+02:00", group: "D", home: "Australia", away: "Türkiye", homeScore: 2, awayScore: 0, venue: "BC Place Vancouver", stage: "group" },
+        { id: 9, kickoff: "2026-06-14T18:00:00+02:00", group: "E", home: "Germany", away: "Curaçao", homeScore: 7, awayScore: 1, venue: "Houston Stadium", stage: "group" },
+        { id: 10, kickoff: "2026-06-15T00:00:00+02:00", group: "F", home: "Netherlands", away: "Japan", homeScore: 2, awayScore: 2, venue: "Dallas Stadium", stage: "group" },
+        { id: 11, kickoff: "2026-06-15T03:00:00+02:00", group: "E", home: "Côte d'Ivoire", away: "Ecuador", homeScore: 1, awayScore: 0, venue: "Philadelphia Stadium", stage: "group" },
+        { id: 12, kickoff: "2026-06-15T09:00:00+02:00", group: "F", home: "Sweden", away: "Tunisia", homeScore: 5, awayScore: 1, venue: "Estadio Monterrey", stage: "group" },
+        { id: 13, kickoff: "2026-06-15T18:00:00+02:00", group: "H", home: "Saudi Arabia", away: "Uruguay", homeScore: 1, awayScore: 1, venue: "Miami Stadium", stage: "group" },
+        { id: 14, kickoff: "2026-06-15T21:00:00+02:00", group: "H", home: "Spain", away: "Cabo Verde", homeScore: 0, awayScore: 0, venue: "Atlanta Stadium", stage: "group" },
+        { id: 15, kickoff: "2026-06-16T03:00:00+02:00", group: "G", home: "Iran", away: "New Zealand", homeScore: 2, awayScore: 2, venue: "Los Angeles Stadium", stage: "group" },
+        { id: 16, kickoff: "2026-06-16T06:00:00+02:00", group: "G", home: "Belgium", away: "Egypt", homeScore: 1, awayScore: 1, venue: "Seattle Stadium", stage: "group" },
+        { id: 17, kickoff: "2026-06-16T21:00:00+02:00", group: "I", home: "France", away: "Senegal", homeScore: 3, awayScore: 1, venue: "New York New Jersey Stadium", stage: "group" },
+        { id: 18, kickoff: "2026-06-17T03:00:00+02:00", group: "I", home: "Iraq", away: "Norway", homeScore: 1, awayScore: 4, venue: "Boston Stadium", stage: "group" },
+        { id: 19, kickoff: "2026-06-17T05:00:00+02:00", group: "J", home: "Argentina", away: "Algeria", homeScore: 3, awayScore: 0, venue: "Kansas City Stadium", stage: "group" },
+        { id: 20, kickoff: "2026-06-17T08:00:00+02:00", group: "J", home: "Austria", away: "Jordan", homeScore: 3, awayScore: 1, venue: "San Francisco Bay Area Stadium", stage: "group" },
+        { id: 21, kickoff: "2026-06-17T21:00:00+02:00", group: "L", home: "Ghana", away: "Panama", homeScore: 1, awayScore: 0, venue: "Toronto Stadium", stage: "group" },
+        { id: 22, kickoff: "2026-06-18T03:00:00+02:00", group: "L", home: "England", away: "Croatia", homeScore: 4, awayScore: 2, venue: "Dallas Stadium", stage: "group" },
+        { id: 23, kickoff: "2026-06-18T06:00:00+02:00", group: "K", home: "Portugal", away: "Congo DR", homeScore: 1, awayScore: 1, venue: "Houston Stadium", stage: "group" },
+        { id: 24, kickoff: "2026-06-18T09:00:00+02:00", group: "K", home: "Uzbekistan", away: "Colombia", homeScore: 1, awayScore: 3, venue: "Mexico City Stadium", stage: "group" },
+        { id: 25, kickoff: "2026-06-18T21:00:00+02:00", group: "A", home: "Czechia", away: "South Africa", homeScore: 1, awayScore: 1, venue: "Atlanta Stadium", stage: "group" },
+        { id: 26, kickoff: "2026-06-19T03:00:00+02:00", group: "B", home: "Switzerland", away: "Bosnia and Herzegovina", homeScore: 4, awayScore: 1, venue: "Los Angeles Stadium", stage: "group" },
+        { id: 27, kickoff: "2026-06-19T06:00:00+02:00", group: "B", home: "Canada", away: "Qatar", homeScore: 6, awayScore: 0, venue: "BC Place Vancouver", stage: "group" },
+        { id: 28, kickoff: "2026-06-19T09:00:00+02:00", group: "A", home: "Mexico", away: "Korea Republic", homeScore: 1, awayScore: 0, venue: "Guadalajara Stadium", stage: "group" },
+        { id: 29, kickoff: "2026-06-19T21:00:00+02:00", group: "C", home: "Brazil", away: "Haiti", homeScore: 3, awayScore: 0, venue: "Philadelphia Stadium", stage: "group" },
+        { id: 30, kickoff: "2026-06-20T03:00:00+02:00", group: "C", home: "Scotland", away: "Morocco", homeScore: 0, awayScore: 1, venue: "Boston Stadium", stage: "group" },
+        { id: 31, kickoff: "2026-06-20T06:00:00+02:00", group: "D", home: "Türkiye", away: "Paraguay", homeScore: 0, awayScore: 1, venue: "San Francisco Bay Area Stadium", stage: "group" },
+        { id: 32, kickoff: "2026-06-20T09:00:00+02:00", group: "D", home: "USA", away: "Australia", homeScore: 2, awayScore: 0, venue: "Seattle Stadium", stage: "group" },
+        { id: 33, kickoff: "2026-06-20T22:00:00+02:00", group: "E", home: "Germany", away: "Côte d'Ivoire", homeScore: 2, awayScore: 1, venue: "Toronto Stadium", stage: "group" },
+        { id: 34, kickoff: "2026-06-21T04:00:00+02:00", group: "E", home: "Ecuador", away: "Curaçao", homeScore: 0, awayScore: 0, venue: "Kansas City Stadium", stage: "group" },
+        { id: 35, kickoff: "2026-06-21T06:00:00+02:00", group: "F", home: "Netherlands", away: "Sweden", homeScore: 5, awayScore: 1, venue: "Houston Stadium", stage: "group" },
+        { id: 36, kickoff: "2026-06-21T09:00:00+02:00", group: "F", home: "Tunisia", away: "Japan", homeScore: 0, awayScore: 4, venue: "Estadio Monterrey", stage: "group" },
+        { id: 37, kickoff: "2026-06-21T22:00:00+02:00", group: "H", home: "Uruguay", away: "Cabo Verde", homeScore: 2, awayScore: 2, venue: "Miami Stadium", stage: "group" },
+        { id: 38, kickoff: "2026-06-22T00:00:00+02:00", group: "H", home: "Spain", away: "Saudi Arabia", homeScore: 4, awayScore: 0, venue: "Atlanta Stadium", stage: "group" },
+        { id: 39, kickoff: "2026-06-22T03:00:00+02:00", group: "G", home: "Belgium", away: "Iran", homeScore: 0, awayScore: 0, venue: "Los Angeles Stadium", stage: "group" },
+        { id: 40, kickoff: "2026-06-22T06:00:00+02:00", group: "G", home: "New Zealand", away: "Egypt", homeScore: 1, awayScore: 3, venue: "BC Place Vancouver", stage: "group" }
+      ],
+      upcomingMatches: [
+        { id: 41, stage: "Gruppenphase", group: "J", home: "Argentina", away: "Austria", kickoff: "2026-06-22T19:00:00+02:00", venue: "AT&T Stadium, Dallas" },
+        { id: 42, stage: "Gruppenphase", group: "I", home: "France", away: "Iraq", kickoff: "2026-06-22T23:00:00+02:00", venue: "Lincoln Financial Field, Philadelphia" },
+        { id: 43, stage: "Gruppenphase", group: "I", home: "Norway", away: "Senegal", kickoff: "2026-06-23T02:00:00+02:00", venue: "MetLife Stadium, New York / New Jersey" },
+        { id: 44, stage: "Gruppenphase", group: "J", home: "Jordan", away: "Algeria", kickoff: "2026-06-23T05:00:00+02:00", venue: "Levi's Stadium, San Francisco Bay Area" },
+        { id: 45, stage: "Gruppenphase", group: "K", home: "Portugal", away: "Uzbekistan", kickoff: "2026-06-23T19:00:00+02:00", venue: "NRG Stadium, Houston" },
+        { id: 46, stage: "Gruppenphase", group: "L", home: "England", away: "Ghana", kickoff: "2026-06-23T22:00:00+02:00", venue: "Gillette Stadium, Boston" },
+        { id: 47, stage: "Gruppenphase", group: "L", home: "Panama", away: "Croatia", kickoff: "2026-06-24T01:00:00+02:00", venue: "BMO Field, Toronto" },
+        { id: 48, stage: "Gruppenphase", group: "K", home: "Colombia", away: "Congo DR", kickoff: "2026-06-24T04:00:00+02:00", venue: "Estadio Akron, Guadalajara" },
+        { id: 49, stage: "Gruppenphase", group: "B", home: "Switzerland", away: "Canada", kickoff: "2026-06-24T18:00:00+02:00", venue: "BC Place, Vancouver" },
+        { id: 50, stage: "Gruppenphase", group: "B", home: "Bosnia and Herzegovina", away: "Qatar", kickoff: "2026-06-24T18:00:00+02:00", venue: "Lumen Field, Seattle" },
+        { id: 51, stage: "Gruppenphase", group: "C", home: "Scotland", away: "Brazil", kickoff: "2026-06-24T21:00:00+02:00", venue: "Hard Rock Stadium, Miami" },
+        { id: 52, stage: "Gruppenphase", group: "C", home: "Morocco", away: "Haiti", kickoff: "2026-06-24T21:00:00+02:00", venue: "Mercedes-Benz Stadium, Atlanta" },
+        { id: 53, stage: "Gruppenphase", group: "A", home: "Czechia", away: "Mexico", kickoff: "2026-06-25T00:00:00+02:00", venue: "Mexico City Stadium" },
+        { id: 54, stage: "Gruppenphase", group: "A", home: "South Africa", away: "Korea Republic", kickoff: "2026-06-25T00:00:00+02:00", venue: "Estadio Monterrey" },
+        { id: 55, stage: "Gruppenphase", group: "E", home: "Ecuador", away: "Germany", kickoff: "2026-06-25T19:00:00+02:00", venue: "MetLife Stadium, New York / New Jersey" },
+        { id: 56, stage: "Gruppenphase", group: "E", home: "Curaçao", away: "Côte d'Ivoire", kickoff: "2026-06-25T19:00:00+02:00", venue: "Lincoln Financial Field, Philadelphia" },
+        { id: 57, stage: "Gruppenphase", group: "F", home: "Japan", away: "Sweden", kickoff: "2026-06-25T22:00:00+02:00", venue: "AT&T Stadium, Dallas" },
+        { id: 58, stage: "Gruppenphase", group: "F", home: "Tunisia", away: "Netherlands", kickoff: "2026-06-25T22:00:00+02:00", venue: "Arrowhead Stadium, Kansas City" },
+        { id: 59, stage: "Gruppenphase", group: "D", home: "Türkiye", away: "USA", kickoff: "2026-06-26T01:00:00+02:00", venue: "SoFi Stadium, Los Angeles" },
+        { id: 60, stage: "Gruppenphase", group: "D", home: "Paraguay", away: "Australia", kickoff: "2026-06-26T01:00:00+02:00", venue: "Levi's Stadium, San Francisco Bay Area" },
+        { id: 61, stage: "Gruppenphase", group: "I", home: "Norway", away: "France", kickoff: "2026-06-26T18:00:00+02:00", venue: "Gillette Stadium, Boston" },
+        { id: 62, stage: "Gruppenphase", group: "I", home: "Senegal", away: "Iraq", kickoff: "2026-06-26T18:00:00+02:00", venue: "BMO Field, Toronto" },
+        { id: 63, stage: "Gruppenphase", group: "H", home: "Cabo Verde", away: "Saudi Arabia", kickoff: "2026-06-26T23:00:00+02:00", venue: "NRG Stadium, Houston" },
+        { id: 64, stage: "Gruppenphase", group: "H", home: "Uruguay", away: "Spain", kickoff: "2026-06-26T23:00:00+02:00", venue: "Guadalajara Stadium" },
+        { id: 65, stage: "Gruppenphase", group: "G", home: "Egypt", away: "Iran", kickoff: "2026-06-27T02:00:00+02:00", venue: "Lumen Field, Seattle" },
+        { id: 66, stage: "Gruppenphase", group: "G", home: "New Zealand", away: "Belgium", kickoff: "2026-06-27T02:00:00+02:00", venue: "BC Place, Vancouver" },
+        { id: 67, stage: "Gruppenphase", group: "L", home: "Panama", away: "England", kickoff: "2026-06-27T20:00:00+02:00", venue: "New York New Jersey Stadium" },
+        { id: 68, stage: "Gruppenphase", group: "L", home: "Croatia", away: "Ghana", kickoff: "2026-06-27T20:00:00+02:00", venue: "Philadelphia Stadium" },
+        { id: 69, stage: "Gruppenphase", group: "J", home: "Algeria", away: "Austria", kickoff: "2026-06-28T01:00:00+02:00", venue: "Kansas City Stadium" },
+        { id: 70, stage: "Gruppenphase", group: "J", home: "Jordan", away: "Argentina", kickoff: "2026-06-28T01:00:00+02:00", venue: "Dallas Stadium" },
+        { id: 71, stage: "Gruppenphase", group: "K", home: "Colombia", away: "Portugal", kickoff: "2026-06-28T04:00:00+02:00", venue: "Miami Stadium" },
+        { id: 72, stage: "Gruppenphase", group: "K", home: "Congo DR", away: "Uzbekistan", kickoff: "2026-06-28T04:00:00+02:00", venue: "Atlanta Stadium" }
+      ],
+      bracket: {
+        r32: [
+          { id: 73, code: "M73", date: "2026-06-28T21:00:00+02:00", labelHome: "A2", labelAway: "B2", venue: "Los Angeles Stadium" },
+          { id: 74, code: "M74", date: "2026-06-29T22:00:00+02:00", labelHome: "Germany", labelAway: "3rd A/B/C/D/F", venue: "Boston Stadium" },
+          { id: 75, code: "M75", date: "2026-06-30T03:00:00+02:00", labelHome: "F1", labelAway: "C2", venue: "Estadio Monterrey" },
+          { id: 76, code: "M76", date: "2026-06-29T19:00:00+02:00", labelHome: "C1", labelAway: "F2", venue: "Houston Stadium" },
+          { id: 77, code: "M77", date: "2026-06-30T23:00:00+02:00", labelHome: "I1", labelAway: "3rd C/D/F/G/H", venue: "New York New Jersey Stadium" },
+          { id: 78, code: "M78", date: "2026-06-30T19:00:00+02:00", labelHome: "E2", labelAway: "I2", venue: "Dallas Stadium" },
+          { id: 79, code: "M79", date: "2026-07-01T03:00:00+02:00", labelHome: "Mexico", labelAway: "3rd C/E/F/H/I", venue: "Mexico City Stadium" },
+          { id: 80, code: "M80", date: "2026-07-01T18:00:00+02:00", labelHome: "L1", labelAway: "3rd E/H/I/J/K", venue: "Atlanta Stadium" },
+          { id: 81, code: "M81", date: "2026-07-02T02:00:00+02:00", labelHome: "USA", labelAway: "3rd B/E/F/I/J", venue: "San Francisco Bay Area Stadium" },
+          { id: 82, code: "M82", date: "2026-07-01T22:00:00+02:00", labelHome: "G1", labelAway: "3rd A/E/H/I/J", venue: "Seattle Stadium" },
+          { id: 83, code: "M83", date: "2026-07-03T01:00:00+02:00", labelHome: "K2", labelAway: "L2", venue: "Toronto Stadium" },
+          { id: 84, code: "M84", date: "2026-07-02T21:00:00+02:00", labelHome: "H1", labelAway: "J2", venue: "Los Angeles Stadium" },
+          { id: 85, code: "M85", date: "2026-07-03T05:00:00+02:00", labelHome: "B1", labelAway: "3rd E/F/G/I/J", venue: "BC Place Vancouver" },
+          { id: 86, code: "M86", date: "2026-07-04T00:00:00+02:00", labelHome: "J1", labelAway: "H2", venue: "Miami Stadium" },
+          { id: 87, code: "M87", date: "2026-07-04T03:30:00+02:00", labelHome: "K1", labelAway: "3rd D/E/I/J/L", venue: "Kansas City Stadium" },
+          { id: 88, code: "M88", date: "2026-07-03T20:00:00+02:00", labelHome: "D2", labelAway: "G2", venue: "Dallas Stadium" }
+        ],
+        r16: [
+          { id: 89, code: "M89", date: "2026-07-04T23:00:00+02:00", labelHome: "W74", labelAway: "W77", venue: "Philadelphia Stadium" },
+          { id: 90, code: "M90", date: "2026-07-04T19:00:00+02:00", labelHome: "W73", labelAway: "W75", venue: "Houston Stadium" },
+          { id: 91, code: "M91", date: "2026-07-05T22:00:00+02:00", labelHome: "W76", labelAway: "W78", venue: "New York New Jersey Stadium" },
+          { id: 92, code: "M92", date: "2026-07-06T02:00:00+02:00", labelHome: "W79", labelAway: "W80", venue: "Mexico City Stadium" },
+          { id: 93, code: "M93", date: "2026-07-06T21:00:00+02:00", labelHome: "W83", labelAway: "W84", venue: "Dallas Stadium" },
+          { id: 94, code: "M94", date: "2026-07-07T02:00:00+02:00", labelHome: "W81", labelAway: "W82", venue: "Seattle Stadium" },
+          { id: 95, code: "M95", date: "2026-07-07T19:00:00+02:00", labelHome: "W86", labelAway: "W88", venue: "Atlanta Stadium" },
+          { id: 96, code: "M96", date: "2026-07-07T23:00:00+02:00", labelHome: "W85", labelAway: "W87", venue: "BC Place Vancouver" }
+        ],
+        qf: [
+          { id: 97, code: "M97", date: "2026-07-09T22:00:00+02:00", labelHome: "W89", labelAway: "W90", venue: "Boston Stadium" },
+          { id: 98, code: "M98", date: "2026-07-10T22:00:00+02:00", labelHome: "W93", labelAway: "W94", venue: "Los Angeles Stadium" },
+          { id: 99, code: "M99", date: "2026-07-11T22:00:00+02:00", labelHome: "W91", labelAway: "W92", venue: "Miami Stadium" },
+          { id: 100, code: "M100", date: "2026-07-12T02:00:00+02:00", labelHome: "W95", labelAway: "W96", venue: "Kansas City Stadium" }
+        ],
+        sf: [
+          { id: 101, code: "M101", date: "2026-07-15T02:00:00+02:00", labelHome: "W97", labelAway: "W98", venue: "Dallas Stadium" },
+          { id: 102, code: "M102", date: "2026-07-16T02:00:00+02:00", labelHome: "W99", labelAway: "W100", venue: "Atlanta Stadium" }
+        ],
+        finals: [
+          { id: 103, code: "M103", date: "2026-07-18T22:00:00+02:00", labelHome: "L101", labelAway: "L102", venue: "Miami Stadium", title: "Spiel um Platz 3" },
+          { id: 104, code: "M104", date: "2026-07-19T21:00:00+02:00", labelHome: "W101", labelAway: "W102", venue: "New York New Jersey Stadium", title: "Finale" }
+        ]
+      }
+    };
+
+    const API_ENDPOINTS = {
+      groups: "https://worldcup26.ir/get/groups",
+      games: "https://worldcup26.ir/get/games"
+    };
+
+    const NOW = new Date("2026-06-22T12:31:56+02:00");
+    const state = {
+      dataMode: "snapshot",
+      liveSupported: false,
+      lastSync: SNAPSHOT.generatedAt,
+      completedMatches: [...SNAPSHOT.completedMatches],
+      upcomingMatches: [...SNAPSHOT.upcomingMatches],
+      bracket: structuredClone(SNAPSHOT.bracket),
+      standingsCache: null,
+      charts: {},
+      groupFilter: "ALL",
+      teamSearch: "",
+      matchStageFilter: "ALL"
+    };
+
+    function formatDateTime(v) {
+      return new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(v));
+    }
+    function formatShort(v) {
+      return new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(v));
+    }
+    function safeRank(team) { return Number(RANKINGS[team] ?? 999); }
+
+    function buildStandings(matches) {
+      const table = {};
+      for (const [g, teams] of Object.entries(GROUPS)) {
+        table[g] = teams.map(team => ({ team, group: g, gp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0, rank: safeRank(team) }));
+      }
+      for (const m of matches.filter(x => x.group && table[x.group] && Number.isFinite(x.homeScore) && Number.isFinite(x.awayScore))) {
+        const rows = table[m.group];
+        const home = rows.find(r => r.team === m.home);
+        const away = rows.find(r => r.team === m.away);
+        if (!home || !away) continue;
+        home.gp += 1; away.gp += 1;
+        home.gf += m.homeScore; home.ga += m.awayScore; home.gd = home.gf - home.ga;
+        away.gf += m.awayScore; away.ga += m.homeScore; away.gd = away.gf - away.ga;
+        if (m.homeScore > m.awayScore) {
+          home.w += 1; away.l += 1; home.pts += 3;
+        } else if (m.homeScore < m.awayScore) {
+          away.w += 1; home.l += 1; away.pts += 3;
+        } else {
+          home.d += 1; away.d += 1; home.pts += 1; away.pts += 1;
+        }
+      }
+      for (const g of Object.keys(table)) {
+        table[g] = table[g].sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf || a.rank-b.rank).map((row, idx) => ({ ...row, pos: idx + 1 }));
+      }
+      return table;
+    }
+
+    function buildFormIndex(team, standings) {
+      const row = Object.values(standings).flat().find(r => r.team === team);
+      const rank = Math.min(safeRank(team), 86);
+      const rankScore = Math.max(0, (86 - rank) / 85);
+      if (!row || row.gp === 0) {
+        return { rankScore, perfScore: 0.5, total: 0.55 * rankScore + 0.45 * 0.5 };
+      }
+      const ptsPerGame = row.pts / row.gp;
+      const gdPerGame = Math.max(-3, Math.min(3, row.gd / row.gp));
+      const goalsPerGame = Math.max(0, Math.min(4, row.gf / row.gp));
+      const perfScore = Math.max(0, Math.min(1, ptsPerGame / 3 * 0.55 + ((gdPerGame + 3) / 6) * 0.25 + (goalsPerGame / 4) * 0.20));
+      return { rankScore, perfScore, total: 0.55 * rankScore + 0.45 * perfScore };
+    }
+
+    function winProbabilities(teamA, teamB, standings) {
+      const a = buildFormIndex(teamA, standings);
+      const b = buildFormIndex(teamB, standings);
+      const diff = a.total - b.total;
+      const draw = Math.max(0.16, 0.28 - Math.min(0.16, Math.abs(diff) * 0.30));
+      const nonDraw = 1 - draw;
+      const logisticA = 1 / (1 + Math.exp(-diff * 4.7));
+      const pa = nonDraw * logisticA;
+      const pb = nonDraw * (1 - logisticA);
+      return {
+        pa: Math.round(pa * 1000) / 10,
+        pd: Math.round(draw * 1000) / 10,
+        pb: Math.round(pb * 1000) / 10,
+        details: { a, b }
+      };
+    }
+
+    function parseWorldcupApiGames(payload) {
+      if (!payload) return null;
+      const items = Array.isArray(payload.games) ? payload.games : Array.isArray(payload) ? payload : [];
+      if (!items.length) return null;
+
+      const completed = [];
+      const upcoming = [];
+      for (const g of items) {
+        const type = String(g.type || "group");
+        const stage = type === "group" ? "Gruppenphase" : "Knockout";
+        const group = type === "group" ? String(g.group || "") : type.toUpperCase();
+        const date = g.local_date ? normalizeApiDate(g.local_date) : null;
+        const homeName = g.home_team_name_en || g.home_team_label || teamNameFromId(g.home_team_id) || g.home_team_en || g.home || "TBD";
+        const awayName = g.away_team_name_en || g.away_team_label || teamNameFromId(g.away_team_id) || g.away_team_en || g.away || "TBD";
+        const venue = g.stadium_name_en || g.venue || g.stadium || g.stadium_id || "TBD";
+        const hs = finiteNumber(g.home_score);
+        const as = finiteNumber(g.away_score);
+        const finished = String(g.finished || "FALSE").toUpperCase() === "TRUE" || (Number.isFinite(hs) && Number.isFinite(as) && String(g.time_elapsed || "").toLowerCase() === "finished");
+        const inPast = date ? new Date(date) <= NOW : false;
+
+        if (finished || (inPast && Number.isFinite(hs) && Number.isFinite(as))) {
+          completed.push({
+            id: Number(g.id || completed.length + 1000), kickoff: date || NOW.toISOString(), group,
+            home: homeName, away: awayName, homeScore: hs ?? 0, awayScore: as ?? 0, venue, stage: type
+          });
+        } else {
+          upcoming.push({
+            id: Number(g.id || upcoming.length + 2000), stage, group,
+            home: homeName, away: awayName, kickoff: date || NOW.toISOString(), venue
+          });
+        }
+      }
+      completed.sort((a,b) => new Date(a.kickoff) - new Date(b.kickoff));
+      upcoming.sort((a,b) => new Date(a.kickoff) - new Date(b.kickoff));
+      return { completed, upcoming };
+    }
+
+    function normalizeApiDate(raw) {
+      if (!raw) return null;
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw;
+      const m = raw.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
+      if (!m) return null;
+      const [, mm, dd, yyyy, hh, mi] = m;
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}:00-05:00`;
+    }
+
+    function finiteNumber(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function teamNameFromId(id) {
+      return null;
+    }
+
+    function computeMetrics(standings) {
+      const all = Object.values(standings).flat();
+      const next = state.upcomingMatches.filter(m => new Date(m.kickoff) > NOW).sort((a,b) => new Date(a.kickoff)-new Date(b.kickoff));
+      const topScoring = [...all].sort((a,b) => b.gf-a.gf || b.pts-a.pts)[0];
+      const qualified = ["Mexico", "USA", "Germany"];
+      return [
+        { title: "Abgeschlossene Spiele", value: `${state.completedMatches.length}`, sub: `Datenmodus: ${state.dataMode === 'live' ? 'Live' : 'Snapshot'}`, icon: "✓" },
+        { title: "Nächster Anstoß", value: next[0] ? formatShort(next[0].kickoff) : "–", sub: next[0] ? `${next[0].home} vs ${next[0].away}` : "Keine Daten", icon: "🕒" },
+        { title: "Beste Offensive", value: topScoring ? topScoring.team : "–", sub: topScoring ? `${topScoring.gf} Tore` : "Keine Daten", icon: "📈" },
+        { title: "Sicher in R32", value: `${qualified.length}`, sub: qualified.join(" · "), icon: "🏅" }
+      ];
+    }
+
+    function renderMetrics(standings) {
+      const grid = document.getElementById('metricGrid');
+      grid.innerHTML = computeMetrics(standings).map(m => `
+        <div class="metric">
+          <small><span>${m.title}</span><span>${m.icon}</span></small>
+          <strong>${m.value}</strong>
+          <span>${m.sub}</span>
+        </div>
+      `).join('');
+    }
+
+    function populateTeamSelectors() {
+      const teams = Object.keys(RANKINGS).sort((a,b) => safeRank(a)-safeRank(b));
+      const aSel = document.getElementById('teamASelect');
+      const bSel = document.getElementById('teamBSelect');
+      [aSel, bSel].forEach(sel => {
+        sel.innerHTML = teams.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+      });
+      aSel.value = 'Argentina';
+      bSel.value = 'Austria';
+      aSel.addEventListener('change', renderProbabilityModule);
+      bSel.addEventListener('change', renderProbabilityModule);
+    }
+
+    function renderProbabilityModule() {
+      const standings = state.standingsCache;
+      const a = document.getElementById('teamASelect').value;
+      const b = document.getElementById('teamBSelect').value;
+      const prob = winProbabilities(a, b, standings);
+      const stack = document.getElementById('probStack');
+      stack.innerHTML = [
+        {label: `${a} Sieg`, value: prob.pa, color:'#2563eb'},
+        {label: 'Remis', value: prob.pd, color:'#64748b'},
+        {label: `${b} Sieg`, value: prob.pb, color:'#16a34a'}
+      ].map(item => `
+        <div class="prob-row">
+          <div class="prob-head"><span>${escapeHtml(item.label)}</span><span>${item.value}%</span></div>
+          <div class="bar"><div style="width:${item.value}%;background:${item.color};"></div></div>
+        </div>
+      `).join('');
+      document.getElementById('legendGrid').innerHTML = `
+        <div class="legend-box">
+          <strong>${escapeHtml(a)}</strong>
+          FIFA-Rang: #${safeRank(a)}<br>
+          Ranking-Stärke: ${(prob.details.a.rankScore*100).toFixed(0)} / 100<br>
+          Turnierform: ${(prob.details.a.perfScore*100).toFixed(0)} / 100
+        </div>
+        <div class="legend-box">
+          <strong>${escapeHtml(b)}</strong>
+          FIFA-Rang: #${safeRank(b)}<br>
+          Ranking-Stärke: ${(prob.details.b.rankScore*100).toFixed(0)} / 100<br>
+          Turnierform: ${(prob.details.b.perfScore*100).toFixed(0)} / 100
+        </div>
+      `;
+    }
+
+    function renderStatusBanner() {
+      document.getElementById('statusBanner').innerHTML = `
+        <div>${state.dataMode === 'live' ? '<span class="live-dot"></span>Live-Daten aktiv' : '📦 Snapshot aktiv'}</div>
+        <div>Letzte Synchronisierung: ${formatDateTime(state.lastSync)}</div>
+        <div>Spiele: ${state.completedMatches.length + state.upcomingMatches.length}</div>
+      `;
+      document.getElementById('liveStatusText').textContent = state.dataMode === 'live'
+        ? `Live-Feed erfolgreich geladen. Letzter bekannter Sync: ${formatDateTime(state.lastSync)}.`
+        : `Live-Feed nicht verwendet – Dashboard läuft stabil mit dem integrierten Snapshot vom ${formatDateTime(state.lastSync)}.`;
+    }
+
+    function renderUpcoming() {
+      const next = state.upcomingMatches.filter(m => new Date(m.kickoff) > NOW).sort((a,b) => new Date(a.kickoff)-new Date(b.kickoff)).slice(0,8);
+      document.getElementById('nextKickoffs').innerHTML = next.map(m => `
+        <div class="match-row">
+          <div>
+            <div><strong>${escapeHtml(m.home)} vs ${escapeHtml(m.away)}</strong><span class="tag">${escapeHtml(m.group)}</span></div>
+            <div class="match-meta">${escapeHtml(m.venue)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div><strong>${formatDateTime(m.kickoff)}</strong></div>
+            <div class="match-meta">${escapeHtml(m.stage)}</div>
+          </div>
+        </div>
+      `).join('') || '<p class="muted">Keine kommenden Spiele gefunden.</p>';
+    }
+
+    function renderRecentResults() {
+      const recent = [...state.completedMatches].sort((a,b)=> new Date(b.kickoff)-new Date(a.kickoff)).slice(0,12);
+      document.getElementById('recentResults').innerHTML = recent.map(m => `
+        <div class="result-card">
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;">${escapeHtml(m.group)} · ${new Intl.DateTimeFormat('de-DE',{dateStyle:'medium'}).format(new Date(m.kickoff))}</div>
+          <div style="margin-top:6px;font-weight:700;">${escapeHtml(m.home)} <span style="color:#2563eb;">${m.homeScore}</span> : <span style="color:#2563eb;">${m.awayScore}</span> ${escapeHtml(m.away)}</div>
+          <div class="match-meta">${escapeHtml(m.venue)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderKoRadar(standings) {
+      const all = Object.values(standings).flat();
+      const thirds = Object.values(standings).map(rows=>rows[2]).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.rank-b.rank);
+      const q = ['Mexico','USA','Germany'];
+      document.getElementById('koRadar').innerHTML = [
+        {label:'Bereits sicher in der Runde der letzten 32', value:q.join(' · ')},
+        {label:'Aktuell bestes Drittplatzierten-Ranking', value:thirds.slice(0,8).map(r=>r.team).join(' · ')},
+        {label:'Nächstes KO-Datum', value:'28.06.2026 – Start der Runde der letzten 32'}
+      ].map(x => `
+        <div class="info-card">
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;">${escapeHtml(x.label)}</div>
+          <div style="margin-top:6px;font-weight:700;line-height:1.5;">${escapeHtml(x.value)}</div>
+        </div>
+      `).join('');
+    }
+
+    function buildTopTeams(standings) {
+      return [...Object.values(standings).flat()].sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf).slice(0,10);
+    }
+
+    function renderTopTeamsChart(standings) {
+      const top = buildTopTeams(standings);
+      const ctx = document.getElementById('topTeamsChart');
+      if (state.charts.top) state.charts.top.destroy();
+      state.charts.top = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top.map(x=>x.team),
+          datasets: [{
+            label: 'Punkte',
+            data: top.map(x=>x.pts),
+            backgroundColor: ['#0f172a','#2563eb','#16a34a','#7c3aed','#ea580c','#dc2626','#0284c7','#57534e','#14b8a6','#e11d48']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#475569' }, grid: { color: '#e2e8f0' } },
+            y: { ticks: { color: '#475569' }, grid: { color: '#e2e8f0' } }
+          }
+        }
+      });
+    }
+
+    function renderGroups(standings) {
+      const filter = state.groupFilter;
+      const term = state.teamSearch.toLowerCase().trim();
+      const groupsGrid = document.getElementById('groupsGrid');
+      const entries = Object.entries(standings)
+        .filter(([g]) => filter === 'ALL' || g === filter)
+        .map(([g, rows]) => [g, rows.filter(r => !term || r.team.toLowerCase().includes(term))])
+        .filter(([, rows]) => rows.length > 0);
+
+      groupsGrid.innerHTML = entries.map(([g, rows]) => `
+        <div class="group-card">
+          <div class="group-head">Gruppe ${g}</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Team</th><th class="num">Sp</th><th class="num">Pkt</th><th class="num">T</th><th class="num">G</th><th class="num">Diff</th></tr>
+              </thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr class="${r.pos <= 2 ? 'qual' : r.pos === 3 ? 'third' : ''}">
+                    <td>${r.pos}</td>
+                    <td>${escapeHtml(r.team)} <span class="tag">FIFA #${safeRank(r.team)}</span></td>
+                    <td class="num">${r.gp}</td>
+                    <td class="num"><strong>${r.pts}</strong></td>
+                    <td class="num">${r.gf}:${r.ga}</td>
+                    <td class="num">${r.w}/${r.d}/${r.l}</td>
+                    <td class="num">${r.gd > 0 ? '+'+r.gd : r.gd}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `).join('') || '<p class="muted">Keine Gruppen für den aktuellen Filter gefunden.</p>';
+
+      const thirds = Object.values(standings).map(rows=>rows[2]).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.rank-b.rank);
+      document.getElementById('thirdPlaceBody').innerHTML = thirds.map((r, idx) => `
+        <tr class="${idx < 8 ? 'qual' : 'out'}">
+          <td>${idx+1}</td>
+          <td>${escapeHtml(r.team)}</td>
+          <td>${r.group}</td>
+          <td class="num">${r.pts}</td>
+          <td class="num">${r.gd > 0 ? '+'+r.gd : r.gd}</td>
+          <td class="num">${r.gf}</td>
+          <td><span class="status-badge ${idx < 8 ? 'status-in' : 'status-out'}">${idx < 8 ? 'derzeit drin' : 'derzeit draußen'}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderMatchList(standings) {
+      const list = document.getElementById('matchList');
+      let matches = [...state.upcomingMatches].sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
+      if (state.matchStageFilter === 'Gruppenphase') matches = matches.filter(m => m.stage === 'Gruppenphase');
+      if (state.matchStageFilter === 'Knockout') matches = matches.filter(m => m.stage !== 'Gruppenphase');
+      list.innerHTML = matches.map(m => {
+        const p = winProbabilities(m.home, m.away, standings);
+        return `
+          <div class="match-row">
+            <div>
+              <div><strong>${escapeHtml(m.home)} vs ${escapeHtml(m.away)}</strong><span class="tag">${escapeHtml(m.group)}</span></div>
+              <div class="match-meta">${escapeHtml(m.venue)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div><strong>${formatDateTime(m.kickoff)}</strong></div>
+              <div class="match-meta">Heuristik: ${escapeHtml(m.home)} ${p.pa}% · Remis ${p.pd}% · ${escapeHtml(m.away)} ${p.pb}%</div>
+            </div>
+          </div>
+        `;
+      }).join('') || '<p class="muted">Keine Spiele für den aktuellen Filter gefunden.</p>';
+    }
+
+    function renderBracket() {
+      const container = document.getElementById('bracketStage');
+      const stages = [
+        { key: 'r32', title: 'Runde der letzten 32' },
+        { key: 'r16', title: 'Achtelfinale' },
+        { key: 'qf', title: 'Viertelfinale' },
+        { key: 'sf', title: 'Halbfinale & Finaltag' }
+      ];
+      container.innerHTML = stages.map(s => {
+        let matches = state.bracket[s.key] || [];
+        if (s.key === 'sf') matches = [...(state.bracket.sf || []), ...(state.bracket.finals || [])];
+        return `
+          <div class="stage-col">
+            <h3>${escapeHtml(s.title)}</h3>
+            ${matches.map(m => `
+              <div class="bracket-match">
+                <div class="when">${escapeHtml(m.code)} · ${formatDateTime(m.date)} · ${escapeHtml(m.venue)}</div>
+                ${m.title ? `<div style="font-weight:700;margin-bottom:6px;">${escapeHtml(m.title)}</div>` : ''}
+                <div class="teamline"><span>${escapeHtml(m.labelHome || 'TBD')}</span></div>
+                <div class="teamline"><span>${escapeHtml(m.labelAway || 'TBD')}</span></div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderScatter(standings) {
+      const rows = Object.values(standings).flat();
+      const data = rows.map(r => ({
+        x: ((86 - Math.min(safeRank(r.team), 86)) / 85) * 100,
+        y: buildFormIndex(r.team, standings).perfScore * 100,
+        label: r.team,
+        pos: r.pos
+      }));
+      const ctx = document.getElementById('scatterChart');
+      if (state.charts.scatter) state.charts.scatter.destroy();
+      state.charts.scatter = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Teams',
+            data,
+            pointRadius: 6,
+            backgroundColor: data.map(d => d.pos === 1 ? '#16a34a' : d.pos === 2 ? '#2563eb' : d.pos === 3 ? '#f59e0b' : '#94a3b8')
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          parsing: false,
+          scales: {
+            x: { title: { display: true, text: 'Ranking-Stärke' }, min: 0, max: 100, grid: { color: '#e2e8f0' }, ticks: { color: '#475569' } },
+            y: { title: { display: true, text: 'Turnierform' }, min: 0, max: 100, grid: { color: '#e2e8f0' }, ticks: { color: '#475569' } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const v = ctx.raw;
+                  return `${v.label}: Form ${v.y.toFixed(0)} · Ranking-Stärke ${v.x.toFixed(0)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderAll() {
+      state.standingsCache = buildStandings(state.completedMatches);
+      renderStatusBanner();
+      renderMetrics(state.standingsCache);
+      renderProbabilityModule();
+      renderUpcoming();
+      renderRecentResults();
+      renderKoRadar(state.standingsCache);
+      renderTopTeamsChart(state.standingsCache);
+      renderGroups(state.standingsCache);
+      renderMatchList(state.standingsCache);
+      renderBracket();
+      renderScatter(state.standingsCache);
+    }
+
+    function bindTabs() {
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(btn => btn.addEventListener('click', () => {
+        buttons.forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      }));
+    }
+
+    function bindFilters() {
+      const groupFilter = document.getElementById('groupFilter');
+      Object.keys(GROUPS).forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g; opt.textContent = `Gruppe ${g}`;
+        groupFilter.appendChild(opt);
+      });
+      groupFilter.addEventListener('change', e => { state.groupFilter = e.target.value; renderGroups(state.standingsCache); });
+      document.getElementById('teamSearch').addEventListener('input', e => { state.teamSearch = e.target.value; renderGroups(state.standingsCache); });
+      document.getElementById('matchStageFilter').addEventListener('change', e => { state.matchStageFilter = e.target.value; renderMatchList(state.standingsCache); });
+    }
+
+    async function tryLoadLiveData() {
+      try {
+        const [gamesResp, groupsResp] = await Promise.all([
+          fetch(API_ENDPOINTS.games, { cache: 'no-store' }),
+          fetch(API_ENDPOINTS.groups, { cache: 'no-store' })
+        ]);
+        if (!gamesResp.ok) throw new Error(`games HTTP ${gamesResp.status}`);
+        const gamesJson = await gamesResp.json();
+        const parsed = parseWorldcupApiGames(gamesJson);
+        if (!parsed) throw new Error('No usable game payload');
+        state.completedMatches = parsed.completed.length ? parsed.completed : state.completedMatches;
+        state.upcomingMatches = parsed.upcoming.length ? parsed.upcoming : state.upcomingMatches;
+        state.dataMode = 'live';
+        state.liveSupported = true;
+        state.lastSync = new Date().toISOString();
+      } catch (err) {
+        console.warn('Live fetch failed, using snapshot.', err);
+        state.dataMode = 'snapshot';
+        state.liveSupported = false;
+      }
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    async function init() {
+      bindTabs();
+      bindFilters();
+      populateTeamSelectors();
+      await tryLoadLiveData();
+      renderAll();
+    }
+
+    init();
+  </script>
+</body>
+</html>
