@@ -1,4 +1,0 @@
-window.WM_DASH_CONFIG = {
-  kickoffApiKey: "OPTIONALER_API_KEY",
-  worldCupApiKey: "OPTIONALER_WORLDCUPAPI_KEY_HIER"
-};
