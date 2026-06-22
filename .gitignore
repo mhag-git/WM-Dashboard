@@ -1,0 +1,16 @@
+# Lokale Konfigurationsdatei mit API-Keys
+config.js
+
+# Optional: weitere lokale Varianten
+config.local.js
+.env
+.env.local
+
+# Node / allgemeine Builds (falls du später erweiterst)
+node_modules/
+dist/
+build/
+
+# System-Dateien
+.DS_Store
+Thumbs.db
